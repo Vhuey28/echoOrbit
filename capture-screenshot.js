@@ -20,7 +20,7 @@ const puppeteer = require('puppeteer');
     consoleErrors.push(error.message);
   });
 
-  const filePath = 'file:///Users/vaughnhuey/Homework/code/echoOrbit/echoorbit-prototype.html';
+  const filePath = 'file:///Users/vaughnhuey/Homework/code/echoOrbit/index.html';
   await page.goto(filePath, { waitUntil: 'networkidle0', timeout: 30000 });
 
   // Wait a bit for any async JS to execute
