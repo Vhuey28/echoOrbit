@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoOrbit — Say it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script src="progression.js"></script>
+<script src="audio.js"></script>
+<style>
+  :root{
+    --void:#171335;
+    --panel:#1F1B45;
+    --cream:#F5EFE0;
+    --teal:#5DCAA5;   --teal-dark:#0F6E56;   --teal-light:#9FE1CB;
+    --coral:#F0997B;  --coral-dark:#993C1D;  --coral-light:#FAECE7;
+    --amber:#EF9F27;  --amber-dark:#854F0B;  --amber-light:#FAC775;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--void);
+    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
+    color:var(--cream);
+    -webkit-font-smoothing:antialiased;
+  }
+  .heading, h1{font-family:'Baloo 2', system-ui, sans-serif; font-weight:600}
+
+  .screen{
+    max-width:720px;
+    margin:0 auto;
+    padding:1rem 1rem 3rem;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0.5rem 0.25rem 1rem;
+  }
+  .back-btn{
+    background:none;
+    border:none;
+    color:var(--cream);
+    opacity:0.75;
+    font-size:0.9rem;
+    font-family:inherit;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .back-btn:hover{opacity:1}
+  .back-btn:focus-visible{outline:2px solid var(--teal-light); outline-offset:2px; border-radius:6px}
+
+  .hud{
+    display:flex;
+    align-items:center;
+    gap:1rem;
+  }
+  .mute-btn{
+    background:none;
+    border:none;
+    padding:4px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+  }
+  .mute-btn:focus-visible{outline:2px solid var(--teal-light); outline-offset:2px; border-radius:6px}
+  .hud-stat{
+    text-align:right;
+  }
+  .hud-stat .num{font-family:'Baloo 2', sans-serif; font-weight:600; font-size:1.1rem; display:block}
+  .hud-stat .lbl{font-size:0.7rem; opacity:0.55}
+
+  /* ---------- target badge ---------- */
+  .target-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.75rem;
+    margin-bottom:0.75rem;
+  }
+  .target-label{font-size:0.85rem; opacity:0.6}
+  .target-badge{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border-radius:24px;
+    padding:0.5rem 1.1rem 0.5rem 0.6rem;
+    cursor:pointer;
+    border:none;
+    color:inherit;
+    font-family:inherit;
+  }
+  .target-badge:hover{transform:translateY(-1px)}
+  .target-badge .ipa-big{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:1.3rem;
+    color:var(--teal);
+  }
+  .target-badge .speaker{
+    width:26px; height:26px;
+    border-radius:50%;
+    background:rgba(93,202,165,0.15);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .target-badge:focus-visible{outline:2px solid var(--teal-light); outline-offset:2px}
+  .target-badge .say-word{
+    font-size:0.85rem;
+    opacity:0.65;
+  }
+
+  /* ---------- mic control ---------- */
+  .mic-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.6rem;
+    margin-bottom:0.9rem;
+  }
+  .mic-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border:1.5px solid rgba(240,153,123,0.4);
+    color:var(--cream);
+    border-radius:22px;
+    padding:0.5rem 1.1rem;
+    font-family:inherit;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .mic-btn:focus-visible{outline:3px solid var(--coral-light); outline-offset:2px}
+  .mic-btn.listening{
+    border-color:var(--coral);
+    background:rgba(240,153,123,0.12);
+  }
+  .mic-btn.listening .mic-dot{
+    animation:micpulse 1.1s ease-in-out infinite;
+  }
+  .mic-btn[disabled]{
+    opacity:0.4;
+    cursor:not-allowed;
+  }
+  .mic-dot{
+    width:9px; height:9px;
+    border-radius:50%;
+    background:var(--coral);
+  }
+  @keyframes micpulse{
+    0%,100%{transform:scale(1); opacity:0.6}
+    50%{transform:scale(1.4); opacity:1}
+  }
+  .mic-unsupported{
+    text-align:center;
+    font-size:0.8rem;
+    opacity:0.5;
+    margin:0 0 0.5rem;
+  }
+
+  .feedback-toast.voice{background:var(--coral); color:var(--coral-dark)}
+
+  /* ---------- play field ---------- */
+  .field-wrap{
+    position:relative;
+    border-radius:20px;
+    overflow:hidden;
+    background:#12102b;
+    touch-action:none;
+  }
+  #field{
+    display:block;
+    width:100%;
+    height:auto;
+    cursor:crosshair;
+  }
+
+  .feedback-toast{
+    position:absolute;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:0.4rem 0.9rem;
+    border-radius:16px;
+    font-size:0.85rem;
+    font-weight:700;
+    font-family:'Baloo 2', sans-serif;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .feedback-toast.show{opacity:1; transform:translateX(-50%) translateY(4px)}
+  .feedback-toast.correct{background:var(--teal); color:var(--teal-dark)}
+  .feedback-toast.wrong{background:rgba(245,239,224,0.15); color:var(--cream)}
+
+  .instructions{
+    text-align:center;
+    font-size:0.85rem;
+    opacity:0.55;
+    margin-top:0.9rem;
+  }
+
+  /* ---------- round complete overlay ---------- */
+  .complete-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,8,28,0.94);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding:1.5rem;
+    z-index:50;
+  }
+  .complete-overlay.active{display:flex}
+  .confetti-piece{
+    position:absolute;
+    top:-16px;
+    width:7px;
+    height:11px;
+    border-radius:1px;
+    animation:confettiFall linear forwards;
+    pointer-events:none;
+  }
+  @keyframes confettiFall{
+    to{ transform:translateY(320px) rotate(360deg); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .confetti-piece{display:none}
+  }
+  .complete-badge{
+    width:64px; height:64px;
+    border-radius:50%;
+    background:var(--teal);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:1rem;
+  }
+  .complete-overlay h2{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.4rem;
+    margin:0 0 0.5rem;
+  }
+  .complete-stats{
+    display:flex;
+    gap:1.5rem;
+    margin:0.75rem 0 0.5rem;
+  }
+  .complete-stats div{text-align:center}
+  .complete-stats .num{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.3rem;
+    display:block;
+  }
+  .complete-stats .lbl{font-size:0.72rem; opacity:0.55}
+  .unlock-line{
+    font-size:0.9rem;
+    color:var(--teal);
+    margin:0.5rem 0 1.25rem;
+  }
+  .continue-btn{
+    background:var(--teal);
+    color:var(--teal-dark);
+    border:none;
+    border-radius:22px;
+    padding:0.75rem 1.75rem;
+    font-size:0.95rem;
+    font-weight:700;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    cursor:pointer;
+  }
+  .continue-btn:focus-visible{outline:3px solid var(--teal-light); outline-offset:3px}
+
+  @media (prefers-reduced-motion: reduce){
+    .feedback-toast, .target-badge, .continue-btn{transition:none}
+    .target-badge:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <div class="topbar">
+    <button class="back-btn" id="backBtn" aria-label="Go back to game path">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Home
+    </button>
+    <div class="hud">
+      <button class="mute-btn" id="muteBtn" aria-label="Mute sound" title="Mute sound">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M2 6.5v5h3l4 3.5v-12l-4 3.5H2z" fill="var(--cream)" opacity="0.8"/>
+          <path id="muteIconWave" d="M12.5 6a4 4 0 0 1 0 6" stroke="var(--cream)" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>
+          <line id="muteIconSlash" x1="3" y1="3" x2="15" y2="15" stroke="var(--cream)" stroke-width="1.4" stroke-linecap="round" style="display:none"/>
+        </svg>
+      </button>
+      <div class="hud-stat">
+        <span class="num" id="unitTag" style="font-size:0.85rem">&nbsp;</span>
+        <span class="lbl">unit</span>
+      </div>
+      <div class="hud-stat">
+        <span class="num" id="scoreNum">0</span>
+        <span class="lbl">score</span>
+      </div>
+      <div class="hud-stat">
+        <span class="num" id="comboNum">0</span>
+        <span class="lbl">combo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="target-row">
+    <span class="target-label">Find or say this sound:</span>
+    <button class="target-badge" id="targetBadge" aria-label="Play the target sound">
+      <span class="speaker" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 5v4h2.5L8 12V2L4.5 5H2z" fill="var(--teal)"/><path d="M10 4.5a3.5 3.5 0 0 1 0 5" stroke="var(--teal)" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>
+      </span>
+      <span class="ipa-big" id="targetIpa">i</span>
+      <span class="say-word" id="targetWord">"cat"</span>
+    </button>
+  </div>
+
+  <div class="mic-row">
+    <button class="mic-btn" id="micBtn">
+      <span class="mic-dot" aria-hidden="true"></span>
+      <span id="micLabel">Tap to talk</span>
+    </button>
+  </div>
+  <p class="mic-unsupported" id="micUnsupported" hidden>Voice input isn't available in this browser &mdash; tap the bubbles instead.</p>
+
+  <div class="field-wrap">
+    <canvas id="field" width="640" height="520" aria-label="Bubble shooting game field" role="img"></canvas>
+    <div class="feedback-toast" id="toast"></div>
+  </div>
+
+  <p class="instructions">Tap or click where the matching bubble will be to fire</p>
+
+</div>
+
+<div class="complete-overlay" id="completeOverlay" role="status" aria-live="polite">
+  <div class="complete-badge" aria-hidden="true">
+    <svg width="30" height="30" viewBox="0 0 30 30">
+      <path d="M6 16l6 6 12-14" stroke="var(--teal-dark)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h2>Unit complete!</h2>
+  <div class="complete-stats">
+    <div><span class="num" id="summaryScore">0</span><span class="lbl">score</span></div>
+    <div><span class="num" id="summaryCorrect">0</span><span class="lbl">matches</span></div>
+  </div>
+  <p class="unlock-line" id="unlockLine"></p>
+  <button class="continue-btn" id="continueBtn">Back to path</button>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Pull the unit chosen on the landing page from the URL (?unit=g1a),
+  // and merge in any progress passed forward (?unlocked=k1,k2,g1a).
+  const params = new URLSearchParams(window.location.search);
+  applyUnlockedParam(params.get('unlocked'));
+  const unit = resolveUnit(params.get('unit'));
+  document.getElementById('unitTag').textContent = unit.title;
+
+  // Bubble pool is that unit's phonemes, each carrying its example word
+  // (needed for voice matching) and the unit's color family.
+  const pool = unit.phonemes.map(p => ({ ipa: p.ipa, word: p.ex, colorKey: unit.colorKey }));
+
+  let bubbles = [];
+  let particles = [];
+  let projectile = null;
+  let target = null;
+  let score = 0, combo = 0;
+  let correctCount = 0;
+  let roundOver = false;
+  const BUBBLE_R = 34;
+  const CANNON = { x: W/2, y: H - 30 };
+  let aim = { x: W/2, y: H/2 };
+
+  // Difficulty ramps with score: more bubbles on screen (up to 6) and
+  // faster fall speed. Both are recalculated live, not fixed per spawn.
+  const MAX_BUBBLES = 6;
+  const MIN_BUBBLES = 3;
+  const COMPLETE_AT = 6; // correct matches needed to finish the unit
+
+  function desiredBubbleCount(){
+    return Math.min(MAX_BUBBLES, MIN_BUBBLES + Math.floor(score / 25));
+  }
+  function speedMultiplier(){
+    return Math.min(2.2, 1 + score / 120);
+  }
+
+  const stars = Array.from({length:26}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.3 + 0.4,
+    phase: Math.random()*Math.PI*2
+  }));
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // Chooses a decoy bubble. Real phonics instruction deliberately pairs
+  // a target sound with sounds it's commonly confused with, so this
+  // biases toward those instead of picking a fully random pool member --
+  // that's what actually builds discrimination skill rather than just
+  // symbol recognition. Falls back to a random pool pick if no
+  // confusable sound is available (or by the 1-in-4 chance that keeps
+  // easy, unrelated decoys in the mix so the round isn't always maximally hard).
+  function pickDistractor(){
+    if (target){
+      const confusable = getConfusablePhonemes(target.ipa);
+      if (confusable.length){
+        const inPool = pool.filter(p => p.ipa !== target.ipa && confusable.includes(p.ipa));
+        if (inPool.length && Math.random() < 0.75) return pick(inPool);
+
+        const crossUnit = confusable
+          .map(ipa => findPhonemeSource(ipa, true))
+          .filter(src => src && src.unit.id !== unit.id);
+        if (crossUnit.length && Math.random() < 0.6){
+          const src = pick(crossUnit);
+          return { ipa: src.phoneme.ipa, word: src.phoneme.ex, colorKey: src.unit.colorKey };
+        }
+      }
+    }
+    const rest = target ? pool.filter(p => p.ipa !== target.ipa) : pool;
+    return pick(rest.length ? rest : pool);
+  }
+
+  function spawnBubble(forceMatch){
+    const def = forceMatch ? target : pickDistractor();
+    bubbles.push({
+      ipa: def.ipa,
+      colorKey: def.colorKey,
+      x: 50 + Math.random()*(W-100),
+      y: -BUBBLE_R,
+      vy: 0.35 + Math.random()*0.25,
+      wob: Math.random()*Math.PI*2,
+      r: BUBBLE_R
+    });
+  }
+
+  function newTarget(){
+    target = pick(pool);
+    document.getElementById('targetIpa').textContent = target.ipa;
+    document.getElementById('targetWord').textContent = '\u201c' + target.word + '\u201d';
+    bubbles = [];
+    spawnBubble(true);
+    const count = desiredBubbleCount();
+    for (let i = 1; i < count; i++) spawnBubble(false);
+    if (audioUnlocked) window.setTimeout(speakTarget, 250);
+  }
+
+  function toast(msg, cls){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'feedback-toast show ' + cls;
+    window.setTimeout(() => el.classList.remove('show'), 700);
+  }
+
+  function fire(x, y){
+    if (projectile || roundOver) return;
+    const dx = x - CANNON.x, dy = y - CANNON.y;
+    const len = Math.hypot(dx, dy) || 1;
+    projectile = {
+      x: CANNON.x, y: CANNON.y,
+      vx: dx/len * 9, vy: dy/len * 9
+    };
+  }
+
+  function popBubble(index, correct, viaVoice){
+    const popped = bubbles[index];
+    bubbles.splice(index, 1);
+    if (correct){
+      spawnPopParticles(popped.x, popped.y, popped.colorKey);
+      const bonus = viaVoice ? 8 : 0;
+      score += 10 + combo * 2 + bonus;
+      combo += 1;
+      correctCount += 1;
+      toast(viaVoice ? 'Nice saying! +' + (10 + (combo-1)*2 + bonus) : 'Match! +' + (10 + (combo-1)*2), viaVoice ? 'voice' : 'correct');
+      playCorrectChime();
+      document.getElementById('scoreNum').textContent = score;
+      document.getElementById('comboNum').textContent = combo;
+      if (correctCount >= COMPLETE_AT){
+        completeRound();
+        return;
+      }
+      newTarget();
+    } else {
+      spawnMissParticles(popped.x, popped.y);
+      combo = 0;
+      toast('Not quite', 'wrong');
+      playWrongTone();
+      const count = desiredBubbleCount();
+      while (bubbles.length < count - 1) spawnBubble(false);
+      if (!bubbles.some(bb => bb.ipa === target.ipa)) spawnBubble(true);
+      document.getElementById('scoreNum').textContent = score;
+      document.getElementById('comboNum').textContent = combo;
+    }
+  }
+
+  function completeRound(){
+    roundOver = true;
+    bubbles = [];
+    projectile = null;
+    playCompleteFanfare();
+    if (typeof isListening !== 'undefined' && isListening && recognition){
+      isListening = false;
+      recognition.stop();
+    }
+    const next = unlockNext(unit.id);
+    document.getElementById('summaryScore').textContent = score;
+    document.getElementById('summaryCorrect').textContent = correctCount;
+    const unlockLine = document.getElementById('unlockLine');
+    if (next){
+      unlockLine.textContent = 'New unit unlocked: ' + next.title;
+    } else {
+      unlockLine.textContent = 'You\u2019ve reached the last unit for now!';
+    }
+    document.getElementById('completeOverlay').classList.add('active');
+    spawnConfetti();
+
+    const continueBtn = document.getElementById('continueBtn');
+    continueBtn.onclick = () => {
+      window.location.href = 'echoorbit-prototype.html?unit=' + encodeURIComponent(unit.id)
+        + '&unlocked=' + encodeURIComponent(unlockedIdList());
+    };
+  }
+
+  function drawStars(t){
+    stars.forEach(s => {
+      ctx.globalAlpha = 0.25 + 0.4 * (0.5 + 0.5*Math.sin(t/900 + s.phase));
+      ctx.fillStyle = '#F5EFE0';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawPlanet(b){
+    const colors = palette[b.colorKey];
+    const grad = ctx.createRadialGradient(
+      b.x - b.r*0.35, b.y - b.r*0.4, b.r*0.15,
+      b.x, b.y, b.r
+    );
+    grad.addColorStop(0, colors.light);
+    grad.addColorStop(0.55, colors.fill);
+    grad.addColorStop(1, colors.dark);
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.fillStyle = colors.dark;
+    ctx.font = '700 20px Baloo 2, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(b.ipa, b.x, b.y + 1);
+  }
+
+  // Correct pops get an energetic shard burst plus an expanding
+  // shockwave ring, colored to match the bubble that popped.
+  function spawnPopParticles(x, y, colorKey){
+    const colors = palette[colorKey];
+    const count = 12;
+    for (let i = 0; i < count; i++){
+      const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.5;
+      const speed = 2 + Math.random() * 2;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 3 + Math.random() * 2.5,
+        color: Math.random() < 0.5 ? colors.fill : colors.light,
+        life: 1,
+        decay: 0.022 + Math.random() * 0.014
+      });
+    }
+    particles.push({ ring: true, x, y, r: 8, maxR: 44, life: 1, decay: 0.045, color: colors.fill });
+  }
+
+  // Misses get a quiet, muted puff -- fewer particles, no shockwave,
+  // since wrong answers shouldn't feel punished, just acknowledged.
+  function spawnMissParticles(x, y){
+    for (let i = 0; i < 6; i++){
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 0.6;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.2,
+        r: 2 + Math.random() * 1.4,
+        color: 'rgba(245,239,224,0.55)',
+        life: 1,
+        decay: 0.035
+      });
+    }
+  }
+
+  function updateAndDrawParticles(){
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => {
+      if (p.ring){
+        p.r += (p.maxR - p.r) * 0.22;
+        p.life -= p.decay;
+        ctx.globalAlpha = Math.max(p.life, 0) * 0.6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.life -= p.decay;
+        ctx.globalAlpha = Math.max(p.life, 0);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function spawnConfetti(){
+    const overlay = document.getElementById('completeOverlay');
+    overlay.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+    const colors = ['var(--teal)', 'var(--coral)', 'var(--amber)'];
+    for (let i = 0; i < 20; i++){
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = (8 + Math.random() * 84) + '%';
+      el.style.background = colors[i % colors.length];
+      el.style.animationDuration = (1.1 + Math.random() * 0.9) + 's';
+      el.style.animationDelay = (Math.random() * 0.35) + 's';
+      overlay.appendChild(el);
+    }
+  }
+
+  function drawCannon(){
+    const dx = aim.x - CANNON.x, dy = aim.y - CANNON.y;
+    const angle = Math.atan2(dy, dx);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245,239,224,0.18)';
+    ctx.setLineDash([5, 7]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(CANNON.x, CANNON.y);
+    ctx.lineTo(CANNON.x + Math.cos(angle)*260, CANNON.y + Math.sin(angle)*260);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(CANNON.x, CANNON.y);
+    ctx.rotate(angle + Math.PI/2);
+    ctx.beginPath();
+    ctx.moveTo(0, -20); ctx.lineTo(9, 10); ctx.lineTo(-9, 10);
+    ctx.closePath();
+    ctx.fillStyle = '#F5EFE0';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-9,10); ctx.lineTo(-14,20); ctx.lineTo(-4,14); ctx.closePath();
+    ctx.fillStyle = '#EF9F27';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(9,10); ctx.lineTo(14,20); ctx.lineTo(4,14); ctx.closePath();
+    ctx.fillStyle = '#F0997B';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function loop(t){
+    ctx.clearRect(0,0,W,H);
+    drawStars(t);
+
+    if (!roundOver){
+      const mult = speedMultiplier();
+      bubbles.forEach((b,i) => {
+        b.y += b.vy * mult;
+        b.x += Math.sin(t/700 + b.wob) * 0.4;
+        if (b.y - b.r > H){ b.y = -b.r; b.x = 50 + Math.random()*(W-100); }
+        drawPlanet(b);
+      });
+      drawCannon();
+    } else {
+      bubbles.forEach(b => drawPlanet(b));
+    }
+
+    if (projectile && !roundOver){
+      projectile.x += projectile.vx;
+      projectile.y += projectile.vy;
+      ctx.beginPath();
+      ctx.arc(projectile.x, projectile.y, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#F5EFE0';
+      ctx.fill();
+
+      let hitIndex = -1;
+      bubbles.forEach((b,i) => {
+        if (Math.hypot(projectile.x-b.x, projectile.y-b.y) < b.r + 6) hitIndex = i;
+      });
+      if (hitIndex > -1){
+        const wasCorrect = bubbles[hitIndex].ipa === target.ipa;
+        popBubble(hitIndex, wasCorrect);
+        projectile = null;
+      } else if (projectile.x<0||projectile.x>W||projectile.y<0||projectile.y>H){
+        projectile = null;
+      }
+    }
+
+    updateAndDrawParticles();
+
+    requestAnimationFrame(loop);
+  }
+
+  function pointerPos(evt){
+    const rect = canvas.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return {
+      x: (clientX - rect.left) * (W / rect.width),
+      y: (clientY - rect.top) * (H / rect.height)
+    };
+  }
+
+  canvas.addEventListener('mousemove', e => { aim = pointerPos(e); });
+  canvas.addEventListener('click', e => { unlockAudio(); const p = pointerPos(e); aim = p; fire(p.x, p.y); });
+  canvas.addEventListener('touchstart', e => { unlockAudio(); const p = pointerPos(e); aim = p; fire(p.x, p.y); e.preventDefault(); }, {passive:false});
+
+  // Speaks the target word, pausing mic listening first and resuming it
+  // afterward if it was on -- otherwise the mic would hear the game's
+  // own voice output and try to score it as the player's attempt.
+  function speakTarget(){
+    if (!audioUnlocked) return;
+    const wasListening = isListening;
+    if (wasListening && recognition){
+      isListening = false;
+      recognition.stop();
+    }
+    speak(target.word, () => {
+      if (wasListening && recognition){
+        isListening = true;
+        try { recognition.start(); } catch (err) { /* already starting */ }
+        micBtn.classList.add('listening');
+        micLabel.textContent = 'Listening\u2026';
+      }
+    });
+  }
+
+  document.getElementById('targetBadge').addEventListener('click', () => {
+    unlockAudio();
+    speakTarget();
+  });
+
+  const muteBtn = document.getElementById('muteBtn');
+  const muteIconWave = document.getElementById('muteIconWave');
+  const muteIconSlash = document.getElementById('muteIconSlash');
+  muteBtn.addEventListener('click', () => {
+    unlockAudio();
+    const muted = toggleMute();
+    muteIconSlash.style.display = muted ? 'block' : 'none';
+    muteIconWave.style.display = muted ? 'none' : 'block';
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  });
+
+  const backBtn = document.getElementById('backBtn');
+  backBtn.addEventListener('click', () => history.back());
+
+  /* ---------- voice input (bonus layer, never a gate) ----------
+     Tap-to-fire above always works on its own. Speech recognition is
+     an additional, more lenient way to trigger the same match --
+     if it's unsupported or the mic is blocked, the game is still
+     fully playable by tapping. */
+  const micBtn = document.getElementById('micBtn');
+  const micLabel = document.getElementById('micLabel');
+  const micUnsupported = document.getElementById('micUnsupported');
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isListening = false;
+
+  function normalize(str){
+    return str.toLowerCase().replace(/[^a-z]/g, '').trim();
+  }
+
+  // Lenient on purpose: exact match, "contains", or a one-letter-off
+  // match all count, since a 6-year-old's mic audio is noisy and this
+  // layer is meant to encourage attempts, not grade pronunciation.
+  function isCloseMatch(said, word){
+    const a = normalize(said), b = normalize(word);
+    if (!a || !b) return false;
+    if (a === b || a.includes(b) || b.includes(a)) return true;
+    if (Math.abs(a.length - b.length) > 2) return false;
+    let diffs = 0;
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i++){
+      if (a[i] !== b[i]) diffs++;
+    }
+    return diffs <= 1;
+  }
+
+  function handleTranscript(transcript){
+    if (roundOver || !target) return;
+    if (isCloseMatch(transcript, target.word)){
+      const idx = bubbles.findIndex(b => b.ipa === target.ipa);
+      if (idx > -1) popBubble(idx, true, true);
+    } else {
+      toast('Try saying it again', 'wrong');
+    }
+  }
+
+  if (SpeechRecognitionCtor){
+    recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript;
+      handleTranscript(transcript);
+    };
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.disabled = true;
+        micLabel.textContent = 'Mic blocked';
+        micUnsupported.hidden = false;
+        micUnsupported.textContent = 'Microphone access was blocked \u2014 tap the bubbles instead.';
+      }
+      // other errors (no-speech, network) just fall through to onend,
+      // which restarts listening automatically below.
+    };
+    recognition.onend = () => {
+      if (isListening && !roundOver){
+        try { recognition.start(); } catch (err) { /* already starting */ }
+      } else {
+        micBtn.classList.remove('listening');
+        micLabel.textContent = 'Tap to talk';
+      }
+    };
+
+    micBtn.addEventListener('click', () => {
+      unlockAudio();
+      isListening = !isListening;
+      if (isListening){
+        micBtn.classList.add('listening');
+        micLabel.textContent = 'Listening\u2026';
+        try { recognition.start(); } catch (err) { /* already started */ }
+      } else {
+        micBtn.classList.remove('listening');
+        micLabel.textContent = 'Tap to talk';
+        recognition.stop();
+      }
+    });
+  } else {
+    micBtn.disabled = true;
+    micLabel.textContent = 'Voice unavailable';
+    micUnsupported.hidden = false;
+  }
+
+  newTarget();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoOrbit — Pop into pronunciation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#171335;
+    --panel:#1F1B45;
+    --cream:#F5EFE0;
+    --teal:#5DCAA5;
+    --teal-dark:#0F6E56;
+    --teal-light:#9FE1CB;
+    --coral:#F0997B;
+    --coral-dark:#993C1D;
+    --coral-light:#FAECE7;
+    --amber:#EF9F27;
+    --amber-dark:#854F0B;
+    --amber-light:#FAC775;
+    --purple:#7F77DD;
+    --purple-dark:#26215C;
+    --purple-light:#AFA9EC;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    background:var(--void);
+    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
+    color:var(--cream);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1, h2, .heading{
+    font-family:'Baloo 2', system-ui, sans-serif;
+    font-weight:600;
+  }
+
+  a{color:inherit}
+
+  /* ---------- layout shell ---------- */
+  .page{
+    max-width:900px;
+    margin:0 auto;
+    padding:1.5rem 1.5rem 4rem;
+    position:relative;
+    overflow:hidden;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0.5rem 0 2rem;
+    position:relative;
+    z-index:2;
+  }
+
+  .logo{font-size:1.1rem; font-weight:600; font-family:'Baloo 2', sans-serif}
+
+  nav a{
+    margin-left:1.5rem;
+    text-decoration:none;
+    opacity:0.75;
+    font-size:0.95rem;
+  }
+  nav a:hover{opacity:1}
+
+  /* ---------- starfield ---------- */
+  .starfield{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:0;
+  }
+  .star{
+    fill:var(--cream);
+    animation:twinkle 3.5s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:.2}
+    50%{opacity:.85}
+  }
+
+  /* ---------- rocket flyby ---------- */
+  .rocket-flyby{
+    position:absolute;
+    width:34px;
+    height:34px;
+    left:-8%;
+    top:2%;
+    transform:rotate(28deg);
+    animation:flyacross 11s linear infinite;
+    z-index:2;
+  }
+  @keyframes flyacross{
+    0%   { left:-8%;  top:2%;  opacity:0; }
+    8%   { opacity:1; }
+    50%  { left:46%;  top:16%; }
+    92%  { opacity:1; }
+    100% { left:108%; top:32%; opacity:0; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    text-align:center;
+    padding:1.5rem 0 3rem;
+    z-index:1;
+  }
+
+  .planet-bubble{
+    position:absolute;
+    animation:bob 3.6s ease-in-out infinite;
+  }
+  .planet-bubble.p1{ top:10px;  left:8%;  animation-delay:0s; }
+  .planet-bubble.p2{ top:70px;  right:8%; animation-delay:.4s; }
+  .planet-bubble.p3{ bottom:0;  left:4%;  animation-delay:.8s; }
+  @keyframes bob{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-8px)}
+  }
+
+  .mascot{
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid var(--purple);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 1rem;
+    animation:bob 3.8s ease-in-out infinite;
+  }
+
+  h1.title{
+    font-size:2rem;
+    margin:0 0 0.5rem;
+  }
+  .subtitle{
+    opacity:0.7;
+    font-size:1rem;
+    margin:0 0 1.5rem;
+  }
+
+  .btn-primary{
+    background:var(--teal);
+    color:var(--teal-dark);
+    border:none;
+    border-radius:24px;
+    padding:0.85rem 2rem;
+    font-size:1rem;
+    font-weight:700;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .btn-primary:hover{transform:translateY(-2px)}
+  .btn-primary:active{transform:scale(0.97)}
+  .btn-primary:focus-visible{outline:3px solid var(--teal-light); outline-offset:3px}
+
+  /* ---------- sound path (phoneme progression) ---------- */
+  .sound-path{
+    position:relative;
+    z-index:1;
+    margin-bottom:1.5rem;
+  }
+  .sound-path .label{
+    opacity:0.6;
+    font-size:0.85rem;
+    margin:0 0 0.75rem;
+  }
+  .path-track{
+    display:flex;
+    align-items:center;
+    gap:0;
+    overflow-x:auto;
+    padding:0.5rem 0.25rem 1rem;
+    scrollbar-width:thin;
+  }
+  .path-node{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:none;
+    border:none;
+    font-family:inherit;
+    color:inherit;
+    cursor:pointer;
+    padding:0 0.6rem;
+  }
+  .path-node:focus-visible .node-dot{outline:3px solid var(--teal-light); outline-offset:2px}
+  .path-node[disabled]{cursor:not-allowed}
+  .node-dot{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:700;
+    font-family:'Baloo 2', sans-serif;
+    border:2px solid transparent;
+    transition:transform .15s ease;
+  }
+  .path-node:not([disabled]):hover .node-dot{transform:scale(1.08)}
+  .path-node.active .node-dot{border-color:var(--cream)}
+  .node-label{font-size:0.7rem; opacity:0.65; white-space:nowrap}
+  .path-connector{
+    width:20px; height:2px;
+    background:rgba(245,239,224,0.15);
+    flex:0 0 auto;
+  }
+
+  .unit-card{
+    position:relative;
+    background:var(--panel);
+    border-radius:16px;
+    padding:1.1rem 1.25rem;
+    margin-bottom:1.5rem;
+    z-index:1;
+  }
+  .unit-card .unit-heading{
+    display:flex;
+    align-items:baseline;
+    gap:0.5rem;
+    margin:0 0 0.6rem;
+  }
+  .unit-card .unit-title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    margin:0;
+  }
+  .unit-card .unit-grade{
+    font-size:0.8rem;
+    opacity:0.55;
+  }
+  .phoneme-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.5rem;
+  }
+  .phoneme-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(245,239,224,0.06);
+    border:none;
+    border-radius:20px;
+    padding:0.35rem 0.75rem;
+    font-size:0.82rem;
+    font-family:inherit;
+    color:inherit;
+    cursor:pointer;
+  }
+  .phoneme-chip:hover{background:rgba(245,239,224,0.11)}
+  .phoneme-chip:focus-visible{outline:2px solid var(--teal-light); outline-offset:2px}
+  .phoneme-chip .ipa{
+    font-weight:700;
+    font-family:'Baloo 2', sans-serif;
+  }
+  .phoneme-chip .word{opacity:0.6}
+
+  /* ---------- mode select ---------- */
+  .modes{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1rem;
+    margin-bottom:2rem;
+    z-index:1;
+  }
+  @media (max-width:520px){ .modes{grid-template-columns:1fr} }
+
+  .mode-card{
+    background:var(--panel);
+    border-radius:16px;
+    padding:1.25rem;
+    text-align:center;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .15s ease;
+    font-family:inherit;
+    color:inherit;
+  }
+  .mode-card:hover{transform:translateY(-2px)}
+  .mode-card:focus-visible{outline:3px solid var(--teal-light); outline-offset:2px}
+  .mode-card.listen{border-color:rgba(93,202,165,.35)}
+  .mode-card.say{border-color:rgba(240,153,123,.35)}
+  .mode-card .mode-title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    margin:0 0 0.35rem;
+  }
+  .mode-card.listen .mode-title{color:var(--teal)}
+  .mode-card.say .mode-title{color:var(--coral)}
+  .mode-card p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.65;
+  }
+
+  /* ---------- sound map ---------- */
+  .sound-map{
+    position:relative;
+    background:var(--panel);
+    border-radius:16px;
+    padding:1.25rem 1.5rem 1.5rem;
+    z-index:1;
+  }
+  .sound-map .label{
+    opacity:0.6;
+    font-size:0.85rem;
+    margin:0 0 0.75rem;
+  }
+  .sound-map svg{width:100%; height:auto; display:block}
+
+  /* ---------- loading overlay ---------- */
+  .loading-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,8,28,0.92);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:50;
+  }
+  .loading-overlay.active{display:flex}
+
+  .orbit-wrap{
+    position:relative;
+    width:110px;
+    height:110px;
+    margin-bottom:1.25rem;
+  }
+  .orbit-ring{
+    position:absolute; inset:0;
+    animation:ringspin 6s linear infinite;
+  }
+  .orbit-rocket{
+    position:absolute; inset:0;
+    animation:orbit 3.2s linear infinite;
+  }
+  .orbit-rocket-icon{
+    position:absolute;
+    top:2px;
+    left:50%;
+    transform:translateX(-50%);
+    animation:counter 3.2s linear infinite;
+    transform-origin:11px 11px;
+  }
+  @keyframes ringspin{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes orbit{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes counter{ from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+
+  .loading-text{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:1rem;
+    opacity:0.8;
+  }
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--cream);
+    animation:dotfade 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2){animation-delay:.2s}
+  .dot:nth-child(3){animation-delay:.4s}
+  @keyframes dotfade{ 0%,100%{opacity:.2} 50%{opacity:1} }
+
+  /* ---------- accessibility: respect reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce){
+    .planet-bubble, .mascot, .rocket-flyby, .star,
+    .orbit-ring, .orbit-rocket, .orbit-rocket-icon, .dot{
+      animation:none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <svg class="starfield" viewBox="0 0 900 700" preserveAspectRatio="none" aria-hidden="true">
+    <circle class="star" cx="60" cy="40" r="1.5" style="animation-delay:0s"/>
+    <circle class="star" cx="200" cy="20" r="1.2" style="animation-delay:.5s"/>
+    <circle class="star" cx="450" cy="15" r="1.6" style="animation-delay:1s"/>
+    <circle class="star" cx="700" cy="35" r="1.3" style="animation-delay:.3s"/>
+    <circle class="star" cx="820" cy="80" r="1.4" style="animation-delay:.8s"/>
+    <circle class="star" cx="40" cy="220" r="1.3" style="animation-delay:.2s"/>
+    <circle class="star" cx="550" cy="120" r="1.2" style="animation-delay:.6s"/>
+    <circle class="star" cx="300" cy="180" r="1.1" style="animation-delay:1.2s"/>
+    <circle class="star" cx="850" cy="300" r="1.3" style="animation-delay:.4s"/>
+    <circle class="star" cx="120" cy="450" r="1.2" style="animation-delay:.9s"/>
+  </svg>
+
+  <div class="rocket-flyby" aria-hidden="true">
+    <svg width="34" height="34" viewBox="0 0 34 34">
+      <polygon points="20,2 25,16 15,16" fill="var(--cream)"/>
+      <rect x="15" y="14" width="10" height="12" rx="4" fill="#D4537E"/>
+      <circle cx="20" cy="18" r="2" fill="#993556"/>
+      <polygon points="14,20 8,26 15,24" fill="var(--amber)"/>
+      <polygon points="16,24 12,32 19,26" fill="var(--coral)"/>
+    </svg>
+  </div>
+
+  <header>
+    <span class="logo">EchoOrbit</span>
+    <nav>
+      <a href="#play">Play</a>
+      <a href="#teachers">For teachers</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="play">
+
+      <div id="heroBubbles" aria-hidden="true"></div>
+
+      <div class="mascot" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 26 26">
+          <circle cx="9" cy="11" r="2" fill="var(--purple-light)"/>
+          <circle cx="17" cy="11" r="2" fill="var(--purple-light)"/>
+          <path d="M8 17 Q13 21 18 17" stroke="var(--purple-light)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1 class="title">Pop into pronunciation</h1>
+      <p class="subtitle">A free sound-matching game for kindergarten through fifth grade</p>
+      <button class="btn-primary" id="playBtn">Play free</button>
+    </section>
+
+    <section class="sound-path" aria-label="Sound progression path">
+      <div style="display:flex; justify-content:space-between; align-items:baseline">
+        <p class="label">Your path</p>
+        <a href="#" id="fullPathLink" style="font-size:0.8rem; color:var(--teal); text-decoration:none; opacity:0.85">See full path &rarr;</a>
+      </div>
+      <div class="path-track" id="pathTrack"></div>
+    </section>
+
+    <section class="unit-card" id="unitCard" aria-live="polite">
+      <div class="unit-heading">
+        <h2 class="unit-title" id="unitTitle"></h2>
+        <span class="unit-grade" id="unitGrade"></span>
+      </div>
+      <div class="phoneme-chip-row" id="unitChips"></div>
+    </section>
+
+    <section class="modes" aria-label="Choose a game mode">
+      <button class="mode-card listen" data-mode="listen">
+        <p class="mode-title">Listen and match</p>
+        <p>Hear a sound, pop the matching bubble</p>
+      </button>
+      <button class="mode-card say" data-mode="say">
+        <p class="mode-title">Say it</p>
+        <p>Say the sound aloud for bonus points</p>
+      </button>
+    </section>
+
+    <section class="sound-map" id="teachers" aria-label="Vowel sound map">
+      <p class="label">Sound map</p>
+      <svg viewBox="0 0 300 100" role="img" aria-label="A simplified vowel chart shaped like a trapezoid, showing where each vowel sound is placed by tongue position">
+        <line x1="30" y1="20" x2="270" y2="20" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
+        <line x1="30" y1="80" x2="230" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
+        <line x1="30" y1="20" x2="30" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
+        <line x1="270" y1="20" x2="230" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
+        <circle cx="40" cy="28" r="4" fill="var(--teal)"/><text x="40" y="14" fill="var(--teal)" font-size="9" text-anchor="middle">i</text>
+        <circle cx="260" cy="28" r="4" fill="var(--teal)"/><text x="260" y="14" fill="var(--teal)" font-size="9" text-anchor="middle">u</text>
+        <circle cx="150" cy="50" r="4" fill="var(--amber)"/><text x="150" y="43" fill="var(--amber)" font-size="9" text-anchor="middle">&#601;</text>
+        <circle cx="60" cy="72" r="4" fill="var(--coral)"/><text x="60" y="90" fill="var(--coral)" font-size="9" text-anchor="middle">&#230;</text>
+        <circle cx="235" cy="72" r="4" fill="var(--coral)"/><text x="235" y="90" fill="var(--coral)" font-size="9" text-anchor="middle">&#593;</text>
+      </svg>
+    </section>
+  </main>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
+  <div class="orbit-wrap">
+    <svg class="orbit-ring" width="110" height="110" viewBox="0 0 110 110" aria-hidden="true">
+      <circle cx="55" cy="55" r="48" fill="none" stroke="var(--purple)" stroke-width="2" stroke-dasharray="6 8" opacity=".55"/>
+    </svg>
+    <div class="orbit-rocket" aria-hidden="true">
+      <div class="orbit-rocket-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22">
+          <polygon points="13,1 17,10 9,10" fill="var(--cream)"/>
+          <rect x="9" y="9" width="6" height="8" rx="2.5" fill="#D4537E"/>
+          <polygon points="8,13 4,18 9,16" fill="var(--amber)"/>
+        </svg>
+      </div>
+    </div>
+    <svg width="110" height="110" viewBox="0 0 110 110" style="position:absolute;top:0;left:0" aria-hidden="true">
+      <defs><clipPath id="cpl"><circle cx="55" cy="55" r="24"/></clipPath></defs>
+      <circle cx="55" cy="55" r="24" fill="var(--teal)"/>
+      <g clip-path="url(#cpl)">
+        <circle cx="64" cy="64" r="24" fill="var(--teal-dark)"/>
+        <circle cx="46" cy="45" r="10" fill="var(--teal-light)"/>
+      </g>
+    </svg>
+  </div>
+  <p class="loading-text">
+    Loading next round
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </p>
+</div>
+
+<script src="progression.js"></script>
+<script src="audio.js"></script>
+<script>
+  /* progression + palette now come from progression.js, loaded above.
+     colorKey on each unit picks which palette entry its bubbles render in. */
+
+  // Restore any progress passed back from the gameplay screen.
+  const incoming = new URLSearchParams(window.location.search);
+  applyUnlockedParam(incoming.get('unlocked'));
+  const requestedUnit = incoming.get('unit');
+  const validRequested = requestedUnit && getUnitById(requestedUnit) && getUnitById(requestedUnit).unlocked;
+
+  let currentUnitId = validRequested ? requestedUnit : getUnlockedUnits()[0].id;
+
+  function planetSvg(phoneme, colors, size, ring) {
+    const r = size / 2 - size * 0.13;
+    const cx = size / 2, cy = size / 2;
+    const uid = 'cp' + Math.random().toString(36).slice(2, 8);
+    const ring_svg = ring
+      ? `<ellipse cx="${cx}" cy="${cy}" rx="${size*0.5}" ry="${size*0.11}" fill="none" stroke="${colors.light}" stroke-width="1.5" opacity=".7" transform="rotate(-18 ${cx} ${cy})"/>`
+      : '';
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <defs><clipPath id="${uid}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath></defs>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${colors.fill}"/>
+      <g clip-path="url(#${uid})">
+        <circle cx="${cx+size*0.15}" cy="${cy+size*0.15}" r="${r}" fill="${colors.dark}"/>
+        <circle cx="${cx-size*0.15}" cy="${cy-size*0.17}" r="${r*0.4}" fill="${colors.light}"/>
+      </g>
+      ${ring_svg}
+      <text x="${cx}" y="${cy+size*0.07}" fill="${colors.dark}" font-size="${size*0.24}" text-anchor="middle" font-weight="700">${phoneme.ipa}</text>
+    </svg>`;
+  }
+
+  function renderHeroBubbles(unit) {
+    const container = document.getElementById('heroBubbles');
+    const colors = palette[unit.colorKey];
+    const sizes = [54, 46, 40];
+    const positions = ['p1', 'p2', 'p3'];
+    container.innerHTML = unit.phonemes.slice(0, 3).map((ph, i) => `
+      <div class="planet-bubble ${positions[i]}" style="animation-delay:${i * 0.4}s">
+        ${planetSvg(ph, colors, sizes[i], i === 0)}
+      </div>`).join('');
+  }
+
+  function renderUnitCard(unit) {
+    document.getElementById('unitTitle').textContent = unit.title;
+    document.getElementById('unitGrade').textContent = 'Grade ' + unit.grade;
+    document.getElementById('unitChips').innerHTML = unit.phonemes.map(ph => `
+      <button class="phoneme-chip" type="button" data-word="${ph.ex}" aria-label="Play the word ${ph.ex}">
+        <span class="ipa">${ph.ipa}</span>
+        <span class="word">${ph.sp} \u00b7 ${ph.ex}</span>
+      </button>`).join('');
+    document.querySelectorAll('.phoneme-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        unlockAudio();
+        speak(chip.dataset.word);
+      });
+    });
+  }
+
+  function renderPath() {
+    const track = document.getElementById('pathTrack');
+    track.innerHTML = progression.map((unit, i) => {
+      const colors = palette[unit.colorKey];
+      const dotStyle = unit.unlocked
+        ? `background:${colors.fill};color:${colors.dark}`
+        : `background:rgba(245,239,224,0.08);color:rgba(245,239,224,0.4)`;
+      const connector = i < progression.length - 1 ? '<span class="path-connector" aria-hidden="true"></span>' : '';
+      const lock = unit.unlocked ? '' : `<svg width="12" height="12" viewBox="0 0 12 12" style="position:absolute"><rect x="2.5" y="5" width="7" height="5.5" rx="1" fill="rgba(245,239,224,0.5)"/><path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="rgba(245,239,224,0.5)" stroke-width="1" fill="none"/></svg>`;
+      return `
+        <button class="path-node${unit.id === currentUnitId ? ' active' : ''}"
+                data-id="${unit.id}"
+                ${unit.unlocked ? '' : 'disabled aria-disabled="true"'}
+                aria-label="${unit.title}, grade ${unit.grade}${unit.unlocked ? '' : ', locked'}">
+          <span class="node-dot" style="${dotStyle};position:relative">${unit.unlocked ? unit.grade : ''}${lock}</span>
+          <span class="node-label">${unit.title}</span>
+        </button>
+        ${connector}`;
+    }).join('');
+
+    track.querySelectorAll('.path-node:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => selectUnit(btn.dataset.id));
+    });
+  }
+
+  function selectUnit(id) {
+    const unit = progression.find(u => u.id === id);
+    if (!unit || !unit.unlocked) return;
+    currentUnitId = id;
+    renderHeroBubbles(unit);
+    renderUnitCard(unit);
+    renderPath();
+  }
+
+  /* ---------- loading overlay + wiring ---------- */
+  const overlay = document.getElementById('loadingOverlay');
+  const playBtn = document.getElementById('playBtn');
+
+  function showLoading(duration) {
+    overlay.classList.add('active');
+    window.setTimeout(() => overlay.classList.remove('active'), duration);
+  }
+
+  // demo hook: swap this timeout for your real "fetch next round" call,
+  // and unlock the next unit in `progression` once a round is completed.
+  function startRound(mode){
+    showLoading(1400);
+    window.setTimeout(() => {
+      const screen = mode === 'say' ? 'echoorbit-sayit.html' : 'echoorbit-gameplay.html';
+      const dest = screen + '?unit=' + encodeURIComponent(currentUnitId)
+        + '&unlocked=' + encodeURIComponent(unlockedIdList());
+      window.location.href = dest;
+    }, 1400);
+  }
+  playBtn.addEventListener('click', () => startRound('listen'));
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('click', () => startRound(card.dataset.mode));
+  });
+
+  document.getElementById('fullPathLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = 'echoorbit-path.html?unit=' + encodeURIComponent(currentUnitId)
+      + '&unlocked=' + encodeURIComponent(unlockedIdList());
+  });
+
+  /* ---------- init ---------- */
+  selectUnit(currentUnitId);
+</script>
+
+</body>
+</html>
