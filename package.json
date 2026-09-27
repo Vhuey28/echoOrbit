@@ -1,0 +1,13 @@
+{
+  "name": "echoorbit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EchoOrbit — a free K-5 pronunciation game",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node test/run-tests.js"
+  },
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}

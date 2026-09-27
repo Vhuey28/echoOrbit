@@ -4,45 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EchoOrbit — Pop into pronunciation</title>
+<meta name="description" content="EchoOrbit is a free sound-matching game that teaches K-5 pronunciation: hear a sound, see how the mouth makes it, then say it yourself.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="progression.js"></script>
+<script src="audio.js"></script>
+<script src="mouth.js"></script>
 <style>
-  :root{
-    --void:#171335;
-    --panel:#1F1B45;
-    --cream:#F5EFE0;
-    --teal:#5DCAA5;
-    --teal-dark:#0F6E56;
-    --teal-light:#9FE1CB;
-    --coral:#F0997B;
-    --coral-dark:#993C1D;
-    --coral-light:#FAECE7;
-    --amber:#EF9F27;
-    --amber-dark:#854F0B;
-    --amber-light:#FAC775;
-    --purple:#7F77DD;
-    --purple-dark:#26215C;
-    --purple-light:#AFA9EC;
-  }
-
-  *{box-sizing:border-box}
-
-  body{
-    margin:0;
-    background:var(--void);
-    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
-    color:var(--cream);
-    -webkit-font-smoothing:antialiased;
-  }
-
-  h1, h2, .heading{
-    font-family:'Baloo 2', system-ui, sans-serif;
-    font-weight:600;
-  }
-
-  a{color:inherit}
-
   /* ---------- layout shell ---------- */
   .page{
     max-width:900px;
@@ -56,20 +27,35 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:1rem;
     padding:0.5rem 0 2rem;
     position:relative;
     z-index:2;
+    flex-wrap:wrap;
   }
-
   .logo{font-size:1.1rem; font-weight:600; font-family:'Baloo 2', sans-serif}
-
+  nav{display:flex; align-items:center; gap:1.25rem}
   nav a{
-    margin-left:1.5rem;
     text-decoration:none;
-    opacity:0.75;
+    color:var(--text-muted);
     font-size:0.95rem;
   }
-  nav a:hover{opacity:1}
+  nav a:hover{color:var(--teal-light)}
+
+  .icon-btn{
+    background:var(--panel);
+    border:1px solid rgba(245,239,224,0.18);
+    color:var(--text);
+    border-radius:18px;
+    padding:0.32rem 0.6rem;
+    font-size:0.78rem;
+    font-family:inherit;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .icon-btn:hover{border-color:var(--teal)}
 
   /* ---------- starfield ---------- */
   .starfield{
@@ -80,10 +66,7 @@
     pointer-events:none;
     z-index:0;
   }
-  .star{
-    fill:var(--cream);
-    animation:twinkle 3.5s ease-in-out infinite;
-  }
+  .star{fill:var(--cream); animation:twinkle 3.5s ease-in-out infinite}
   @keyframes twinkle{
     0%,100%{opacity:.2}
     50%{opacity:.85}
@@ -115,11 +98,7 @@
     padding:1.5rem 0 3rem;
     z-index:1;
   }
-
-  .planet-bubble{
-    position:absolute;
-    animation:bob 3.6s ease-in-out infinite;
-  }
+  .planet-bubble{position:absolute; animation:bob 3.6s ease-in-out infinite}
   .planet-bubble.p1{ top:10px;  left:8%;  animation-delay:0s; }
   .planet-bubble.p2{ top:70px;  right:8%; animation-delay:.4s; }
   .planet-bubble.p3{ bottom:0;  left:4%;  animation-delay:.8s; }
@@ -133,7 +112,7 @@
     height:56px;
     border-radius:50%;
     background:var(--purple-dark);
-    border:2px solid var(--purple);
+    border:2px solid var(--purple-deep);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -141,19 +120,12 @@
     animation:bob 3.8s ease-in-out infinite;
   }
 
-  h1.title{
-    font-size:2rem;
-    margin:0 0 0.5rem;
-  }
-  .subtitle{
-    opacity:0.7;
-    font-size:1rem;
-    margin:0 0 1.5rem;
-  }
+  h1.title{font-size:2rem; margin:0 0 0.5rem}
+  .subtitle{color:var(--text-muted); font-size:1rem; margin:0 0 1.5rem}
 
   .btn-primary{
     background:var(--teal);
-    color:var(--teal-dark);
+    color:var(--on-teal);
     border:none;
     border-radius:24px;
     padding:0.85rem 2rem;
@@ -165,19 +137,22 @@
   }
   .btn-primary:hover{transform:translateY(-2px)}
   .btn-primary:active{transform:scale(0.97)}
-  .btn-primary:focus-visible{outline:3px solid var(--teal-light); outline-offset:3px}
+  .btn-secondary{
+    background:none;
+    border:1px solid rgba(245,239,224,0.3);
+    color:var(--text);
+    border-radius:24px;
+    padding:0.8rem 1.5rem;
+    font-size:0.92rem;
+    font-family:inherit;
+    cursor:pointer;
+    margin-left:0.5rem;
+  }
+  .btn-secondary:hover{border-color:var(--coral); color:var(--coral-light)}
 
   /* ---------- sound path (phoneme progression) ---------- */
-  .sound-path{
-    position:relative;
-    z-index:1;
-    margin-bottom:1.5rem;
-  }
-  .sound-path .label{
-    opacity:0.6;
-    font-size:0.85rem;
-    margin:0 0 0.75rem;
-  }
+  .sound-path{position:relative; z-index:1; margin-bottom:1.5rem}
+  .sound-path .label{color:var(--text-muted); font-size:0.85rem; margin:0 0 0.75rem}
   .path-track{
     display:flex;
     align-items:center;
@@ -199,7 +174,6 @@
     cursor:pointer;
     padding:0 0.6rem;
   }
-  .path-node:focus-visible .node-dot{outline:3px solid var(--teal-light); outline-offset:2px}
   .path-node[disabled]{cursor:not-allowed}
   .node-dot{
     width:34px;
@@ -213,20 +187,23 @@
     font-family:'Baloo 2', sans-serif;
     border:2px solid transparent;
     transition:transform .15s ease;
+    position:relative;
   }
   .path-node:not([disabled]):hover .node-dot{transform:scale(1.08)}
   .path-node.active .node-dot{border-color:var(--cream)}
-  .node-label{font-size:0.7rem; opacity:0.65; white-space:nowrap}
+  .node-label{font-size:0.72rem; color:var(--text-muted); white-space:nowrap; max-width:7rem}
+  .path-node[disabled] .node-label{color:var(--text-dim)}
   .path-connector{
     width:20px; height:2px;
-    background:rgba(245,239,224,0.15);
+    background:rgba(245,239,224,0.22);
     flex:0 0 auto;
   }
 
+  /* ---------- unit card + sound lab ---------- */
   .unit-card{
     position:relative;
     background:var(--panel);
-    border-radius:16px;
+    border-radius:var(--radius);
     padding:1.1rem 1.25rem;
     margin-bottom:1.5rem;
     z-index:1;
@@ -236,6 +213,7 @@
     align-items:baseline;
     gap:0.5rem;
     margin:0 0 0.6rem;
+    flex-wrap:wrap;
   }
   .unit-card .unit-title{
     font-family:'Baloo 2', sans-serif;
@@ -243,21 +221,14 @@
     font-size:1.05rem;
     margin:0;
   }
-  .unit-card .unit-grade{
-    font-size:0.8rem;
-    opacity:0.55;
-  }
-  .phoneme-chip-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:0.5rem;
-  }
+  .unit-card .unit-grade{font-size:0.8rem; color:var(--text-dim)}
+  .phoneme-chip-row{display:flex; flex-wrap:wrap; gap:0.5rem}
   .phoneme-chip{
     display:flex;
     align-items:center;
     gap:6px;
-    background:rgba(245,239,224,0.06);
-    border:none;
+    background:var(--panel-raise);
+    border:1px solid transparent;
     border-radius:20px;
     padding:0.35rem 0.75rem;
     font-size:0.82rem;
@@ -265,13 +236,52 @@
     color:inherit;
     cursor:pointer;
   }
-  .phoneme-chip:hover{background:rgba(245,239,224,0.11)}
-  .phoneme-chip:focus-visible{outline:2px solid var(--teal-light); outline-offset:2px}
-  .phoneme-chip .ipa{
-    font-weight:700;
-    font-family:'Baloo 2', sans-serif;
+  .phoneme-chip:hover{background:rgba(245,239,224,0.14)}
+  .phoneme-chip[aria-pressed="true"]{
+    border-color:var(--teal);
+    background:rgba(93,202,165,0.18);
   }
-  .phoneme-chip .word{opacity:0.6}
+  .phoneme-chip .ipa{font-weight:700; font-family:'Baloo 2', sans-serif}
+  .phoneme-chip .word{color:var(--text-muted)}
+
+  .sound-lab{
+    margin-top:1rem;
+    padding-top:1rem;
+    border-top:1px solid rgba(245,239,224,0.12);
+    display:flex;
+    gap:1rem;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .sound-lab[hidden]{display:none}
+  .lab-text{flex:1 1 16rem; min-width:0}
+  .lab-ipa{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:1.5rem;
+    color:var(--teal);
+    margin:0 0 0.25rem;
+  }
+  .lab-ipa .sp{
+    font-size:0.9rem;
+    color:var(--text-muted);
+    font-weight:400;
+    margin-left:0.4rem;
+  }
+  .lab-tip{margin:0 0 0.4rem; font-size:0.95rem}
+  .lab-caption{margin:0 0 0.6rem; font-size:0.8rem; color:var(--text-muted)}
+  .cue-words{display:flex; flex-wrap:wrap; gap:0.4rem; margin:0; padding:0; list-style:none}
+  .cue-word{
+    background:var(--panel-raise);
+    border:1px solid rgba(245,239,224,0.16);
+    color:var(--text);
+    border-radius:16px;
+    padding:0.25rem 0.7rem;
+    font-size:0.85rem;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .cue-word:hover{border-color:var(--teal); background:rgba(93,202,165,0.14)}
 
   /* ---------- mode select ---------- */
   .modes{
@@ -286,7 +296,7 @@
 
   .mode-card{
     background:var(--panel);
-    border-radius:16px;
+    border-radius:var(--radius);
     padding:1.25rem;
     text-align:center;
     border:1px solid transparent;
@@ -296,37 +306,30 @@
     color:inherit;
   }
   .mode-card:hover{transform:translateY(-2px)}
-  .mode-card:focus-visible{outline:3px solid var(--teal-light); outline-offset:2px}
-  .mode-card.listen{border-color:rgba(93,202,165,.35)}
-  .mode-card.say{border-color:rgba(240,153,123,.35)}
+  .mode-card.listen{border-color:rgba(93,202,165,.5)}
+  .mode-card.say{border-color:rgba(240,153,123,.5)}
   .mode-card .mode-title{
     font-family:'Baloo 2', sans-serif;
     font-weight:600;
     font-size:1.05rem;
     margin:0 0 0.35rem;
   }
-  .mode-card.listen .mode-title{color:var(--teal)}
-  .mode-card.say .mode-title{color:var(--coral)}
-  .mode-card p{
-    margin:0;
-    font-size:0.85rem;
-    opacity:0.65;
-  }
+  .mode-card.listen .mode-title{color:var(--teal-light)}
+  .mode-card.say .mode-title{color:var(--coral-light)}
+  .mode-card p{margin:0; font-size:0.85rem; color:var(--text-muted)}
 
-  /* ---------- sound map ---------- */
-  .sound-map{
+  /* ---------- teacher section ---------- */
+  .teachers{
     position:relative;
     background:var(--panel);
-    border-radius:16px;
+    border-radius:var(--radius);
     padding:1.25rem 1.5rem 1.5rem;
     z-index:1;
   }
-  .sound-map .label{
-    opacity:0.6;
-    font-size:0.85rem;
-    margin:0 0 0.75rem;
-  }
-  .sound-map svg{width:100%; height:auto; display:block}
+  .teachers h2{font-size:1.1rem; margin:0 0 0.4rem}
+  .teachers p{margin:0 0 0.9rem; font-size:0.88rem; color:var(--text-muted)}
+  .teachers .label{color:var(--text-muted); font-size:0.85rem; margin:0 0 0.75rem}
+  .teachers svg{width:100%; height:auto; display:block}
 
   /* ---------- loading overlay ---------- */
   .loading-overlay{
@@ -340,25 +343,12 @@
     z-index:50;
   }
   .loading-overlay.active{display:flex}
-
-  .orbit-wrap{
-    position:relative;
-    width:110px;
-    height:110px;
-    margin-bottom:1.25rem;
-  }
-  .orbit-ring{
-    position:absolute; inset:0;
-    animation:ringspin 6s linear infinite;
-  }
-  .orbit-rocket{
-    position:absolute; inset:0;
-    animation:orbit 3.2s linear infinite;
-  }
+  .orbit-wrap{position:relative; width:110px; height:110px; margin-bottom:1.25rem}
+  .orbit-ring{position:absolute; inset:0; animation:ringspin 6s linear infinite}
+  .orbit-rocket{position:absolute; inset:0; animation:orbit 3.2s linear infinite}
   .orbit-rocket-icon{
     position:absolute;
-    top:2px;
-    left:50%;
+    top:2px; left:50%;
     transform:translateX(-50%);
     animation:counter 3.2s linear infinite;
     transform-origin:11px 11px;
@@ -367,13 +357,7 @@
   @keyframes orbit{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   @keyframes counter{ from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
 
-  .loading-text{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:1rem;
-    opacity:0.8;
-  }
+  .loading-text{display:flex; align-items:center; gap:6px; font-size:1rem; color:var(--text-muted)}
   .dot{
     width:6px; height:6px; border-radius:50%;
     background:var(--cream);
@@ -382,17 +366,11 @@
   .dot:nth-child(2){animation-delay:.2s}
   .dot:nth-child(3){animation-delay:.4s}
   @keyframes dotfade{ 0%,100%{opacity:.2} 50%{opacity:1} }
-
-  /* ---------- accessibility: respect reduced motion ---------- */
-  @media (prefers-reduced-motion: reduce){
-    .planet-bubble, .mascot, .rocket-flyby, .star,
-    .orbit-ring, .orbit-rocket, .orbit-rocket-icon, .dot{
-      animation:none !important;
-    }
-  }
 </style>
 </head>
 <body>
+
+<a class="skip-link" href="#play">Skip to the game</a>
 
 <div class="page">
 
@@ -421,69 +399,97 @@
 
   <header>
     <span class="logo">EchoOrbit</span>
-    <nav>
+    <nav aria-label="Main">
       <a href="#play">Play</a>
       <a href="#teachers">For teachers</a>
+      <button class="icon-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="Mute sound">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M2 6.5v5h3l4 3.5v-12l-4 3.5H2z" fill="currentColor"/>
+          <path id="muteIconWave" d="M12.5 6a4 4 0 0 1 0 6" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <line id="muteIconSlash" x1="3" y1="3" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" style="display:none"/>
+        </svg>
+      </button>
     </nav>
   </header>
 
   <main>
-    <section class="hero" id="play">
+    <section class="hero" id="play" aria-labelledby="pageTitle">
 
       <div id="heroBubbles" aria-hidden="true"></div>
 
       <div class="mascot" aria-hidden="true">
         <svg width="26" height="26" viewBox="0 0 26 26">
-          <circle cx="9" cy="11" r="2" fill="var(--purple-light)"/>
-          <circle cx="17" cy="11" r="2" fill="var(--purple-light)"/>
-          <path d="M8 17 Q13 21 18 17" stroke="var(--purple-light)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="9" cy="11" r="2" fill="var(--purple)"/>
+          <circle cx="17" cy="11" r="2" fill="var(--purple)"/>
+          <path d="M8 17 Q13 21 18 17" stroke="var(--purple)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
         </svg>
       </div>
 
-      <h1 class="title">Pop into pronunciation</h1>
+      <h1 class="title" id="pageTitle">Pop into pronunciation</h1>
       <p class="subtitle">A free sound-matching game for kindergarten through fifth grade</p>
-      <button class="btn-primary" id="playBtn">Play free</button>
+      <button class="btn-primary" id="playBtn" type="button">Play free</button>
+      <button class="btn-secondary" id="sayBtn" type="button">Say it out loud</button>
     </section>
 
     <section class="sound-path" aria-label="Sound progression path">
-      <div style="display:flex; justify-content:space-between; align-items:baseline">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:1rem">
         <p class="label">Your path</p>
-        <a href="#" id="fullPathLink" style="font-size:0.8rem; color:var(--teal); text-decoration:none; opacity:0.85">See full path &rarr;</a>
+        <a href="echoorbit-path.html" id="fullPathLink" style="font-size:0.82rem; color:var(--teal-light); text-decoration:underline">See full path</a>
       </div>
       <div class="path-track" id="pathTrack"></div>
     </section>
 
-    <section class="unit-card" id="unitCard" aria-live="polite">
+    <section class="unit-card" id="unitCard" aria-labelledby="unitTitle">
       <div class="unit-heading">
         <h2 class="unit-title" id="unitTitle"></h2>
         <span class="unit-grade" id="unitGrade"></span>
       </div>
       <div class="phoneme-chip-row" id="unitChips"></div>
+
+      <div class="sound-lab" id="soundLab" aria-live="polite">
+        <div class="lab-text">
+          <p class="lab-ipa"><span id="labIpa"></span><span class="sp" id="labSp"></span></p>
+          <p class="lab-tip" id="labTip"></p>
+          <p class="lab-caption" id="labCaption"></p>
+          <ul class="cue-words" id="labWords"></ul>
+        </div>
+        <div id="labArt"></div>
+      </div>
     </section>
 
     <section class="modes" aria-label="Choose a game mode">
-      <button class="mode-card listen" data-mode="listen">
+      <button class="mode-card listen" data-mode="listen" type="button">
         <p class="mode-title">Listen and match</p>
         <p>Hear a sound, pop the matching bubble</p>
       </button>
-      <button class="mode-card say" data-mode="say">
+      <button class="mode-card say" data-mode="say" type="button">
         <p class="mode-title">Say it</p>
         <p>Say the sound aloud for bonus points</p>
       </button>
     </section>
 
-    <section class="sound-map" id="teachers" aria-label="Vowel sound map">
-      <p class="label">Sound map</p>
+    <section class="teachers" id="teachers" aria-labelledby="teachersTitle">
+      <h2 id="teachersTitle">For teachers and parents</h2>
+      <p>
+        Units follow a K&ndash;5 phonics scope and sequence, and each round pairs a target
+        sound with the sounds children most often confuse it with &mdash; minimal pairs like
+        <em>ship</em>/<em>chip</em> and <em>thumb</em>/<em>this</em>. Every sound comes with a
+        mouth diagram, so a child can see where the tongue goes, not just hear the word.
+        Tap any sound above to open it in the sound lab.
+      </p>
+      <p class="label">Sound map: where each vowel is made in the mouth</p>
       <svg viewBox="0 0 300 100" role="img" aria-label="A simplified vowel chart shaped like a trapezoid, showing where each vowel sound is placed by tongue position">
-        <line x1="30" y1="20" x2="270" y2="20" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
-        <line x1="30" y1="80" x2="230" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
-        <line x1="30" y1="20" x2="30" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
-        <line x1="270" y1="20" x2="230" y2="80" stroke="rgba(245,239,224,0.13)" stroke-width="1"/>
-        <circle cx="40" cy="28" r="4" fill="var(--teal)"/><text x="40" y="14" fill="var(--teal)" font-size="9" text-anchor="middle">i</text>
-        <circle cx="260" cy="28" r="4" fill="var(--teal)"/><text x="260" y="14" fill="var(--teal)" font-size="9" text-anchor="middle">u</text>
-        <circle cx="150" cy="50" r="4" fill="var(--amber)"/><text x="150" y="43" fill="var(--amber)" font-size="9" text-anchor="middle">&#601;</text>
-        <circle cx="60" cy="72" r="4" fill="var(--coral)"/><text x="60" y="90" fill="var(--coral)" font-size="9" text-anchor="middle">&#230;</text>
-        <circle cx="235" cy="72" r="4" fill="var(--coral)"/><text x="235" y="90" fill="var(--coral)" font-size="9" text-anchor="middle">&#593;</text>
+        <line x1="30" y1="20" x2="270" y2="20" stroke="rgba(245,239,224,0.22)" stroke-width="1"/>
+        <line x1="30" y1="80" x2="230" y2="80" stroke="rgba(245,239,224,0.22)" stroke-width="1"/>
+        <line x1="30" y1="20" x2="30" y2="80" stroke="rgba(245,239,224,0.22)" stroke-width="1"/>
+        <line x1="270" y1="20" x2="230" y2="80" stroke="rgba(245,239,224,0.22)" stroke-width="1"/>
+        <circle cx="40" cy="28" r="4" fill="var(--teal)"/><text x="40" y="14" fill="var(--teal-light)" font-size="9" text-anchor="middle">i</text>
+        <circle cx="260" cy="28" r="4" fill="var(--teal)"/><text x="260" y="14" fill="var(--teal-light)" font-size="9" text-anchor="middle">u</text>
+        <circle cx="150" cy="50" r="4" fill="var(--amber-light)"/><text x="150" y="43" fill="var(--amber-light)" font-size="9" text-anchor="middle">&#601;</text>
+        <circle cx="60" cy="72" r="4" fill="var(--coral)"/><text x="60" y="90" fill="var(--coral-light)" font-size="9" text-anchor="middle">&#230;</text>
+        <circle cx="235" cy="72" r="4" fill="var(--coral)"/><text x="235" y="90" fill="var(--coral-light)" font-size="9" text-anchor="middle">&#593;</text>
+        <text x="30" y="96" fill="var(--text-dim)" font-size="7">front</text>
+        <text x="252" y="96" fill="var(--text-dim)" font-size="7">back</text>
       </svg>
     </section>
   </main>
@@ -492,7 +498,7 @@
 <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
   <div class="orbit-wrap">
     <svg class="orbit-ring" width="110" height="110" viewBox="0 0 110 110" aria-hidden="true">
-      <circle cx="55" cy="55" r="48" fill="none" stroke="var(--purple)" stroke-width="2" stroke-dasharray="6 8" opacity=".55"/>
+      <circle cx="55" cy="55" r="48" fill="none" stroke="var(--purple-deep)" stroke-width="2" stroke-dasharray="6 8" opacity=".7"/>
     </svg>
     <div class="orbit-rocket" aria-hidden="true">
       <div class="orbit-rocket-icon">
@@ -518,19 +524,19 @@
   </p>
 </div>
 
-<script src="progression.js"></script>
-<script src="audio.js"></script>
 <script>
-  /* progression + palette now come from progression.js, loaded above.
-     colorKey on each unit picks which palette entry its bubbles render in. */
-
-  // Restore any progress passed back from the gameplay screen.
+  /* Progress comes from progression.js (loaded in <head>) and is kept in
+     localStorage, so a refresh no longer sends the player back to the
+     first unit. The `unlocked` URL param is still honoured so progress
+     survives in browsers where storage is blocked. */
+  restoreProgress();
   const incoming = new URLSearchParams(window.location.search);
   applyUnlockedParam(incoming.get('unlocked'));
   const requestedUnit = incoming.get('unit');
   const validRequested = requestedUnit && getUnitById(requestedUnit) && getUnitById(requestedUnit).unlocked;
 
-  let currentUnitId = validRequested ? requestedUnit : getUnlockedUnits()[0].id;
+  let currentUnitId = validRequested ? requestedUnit : furthestUnlockedUnit().id;
+  let currentPhoneme = null;
 
   function planetSvg(phoneme, colors, size, ring) {
     const r = size / 2 - size * 0.13;
@@ -547,7 +553,7 @@
         <circle cx="${cx-size*0.15}" cy="${cy-size*0.17}" r="${r*0.4}" fill="${colors.light}"/>
       </g>
       ${ring_svg}
-      <text x="${cx}" y="${cy+size*0.07}" fill="${colors.dark}" font-size="${size*0.24}" text-anchor="middle" font-weight="700">${phoneme.ipa}</text>
+      <text x="${cx}" y="${cy+size*0.07}" fill="${colors.ink}" font-size="${size*0.24}" text-anchor="middle" font-weight="700">${phoneme.ipa}</text>
     </svg>`;
   }
 
@@ -562,89 +568,174 @@
       </div>`).join('');
   }
 
+  /* The sound lab: tap a sound and see how the mouth makes it. This is
+     the part that turns symbol recognition into pronunciation practice. */
+  function selectPhoneme(unit, ipa) {
+    currentPhoneme = unit.phonemes.find(p => p.ipa === ipa) || unit.phonemes[0];
+    const p = currentPhoneme;
+    document.getElementById('labIpa').textContent = '/' + p.ipa + '/';
+    document.getElementById('labSp').textContent = 'spelled ' + p.sp;
+    document.getElementById('labTip').textContent = p.tip;
+    document.getElementById('labCaption').textContent = mouthCaption(p);
+    document.getElementById('labArt').innerHTML = mouthSvg(p, 124);
+
+    const list = document.getElementById('labWords');
+    list.innerHTML = '';
+    p.words.forEach(w => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cue-word';
+      btn.textContent = w;
+      btn.setAttribute('aria-label', 'Hear the word ' + w);
+      btn.addEventListener('click', () => { unlockAudio(); speak(w); });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+
+    document.querySelectorAll('#unitChips .phoneme-chip').forEach(chip => {
+      chip.setAttribute('aria-pressed', chip.dataset.ipa === ipa ? 'true' : 'false');
+    });
+  }
+
   function renderUnitCard(unit) {
     document.getElementById('unitTitle').textContent = unit.title;
     document.getElementById('unitGrade').textContent = 'Grade ' + unit.grade;
-    document.getElementById('unitChips').innerHTML = unit.phonemes.map(ph => `
-      <button class="phoneme-chip" type="button" data-word="${ph.ex}" aria-label="Play the word ${ph.ex}">
-        <span class="ipa">${ph.ipa}</span>
-        <span class="word">${ph.sp} \u00b7 ${ph.ex}</span>
-      </button>`).join('');
-    document.querySelectorAll('.phoneme-chip').forEach(chip => {
+
+    const row = document.getElementById('unitChips');
+    row.innerHTML = '';
+    unit.phonemes.forEach(ph => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'phoneme-chip';
+      chip.dataset.ipa = ph.ipa;
+      chip.dataset.word = primaryWord(ph);
+      chip.setAttribute('aria-pressed', 'false');
+      chip.setAttribute('aria-label',
+        'Sound ' + ph.ipa + ' as in ' + primaryWord(ph) + '. Play the word and see how to make it.');
+      chip.innerHTML = '<span class="ipa"></span><span class="word"></span>';
+      chip.querySelector('.ipa').textContent = ph.ipa;
+      chip.querySelector('.word').textContent = ph.sp + ' \u00b7 ' + primaryWord(ph);
       chip.addEventListener('click', () => {
         unlockAudio();
-        speak(chip.dataset.word);
+        speak(primaryWord(ph));
+        selectPhoneme(unit, ph.ipa);
       });
+      row.appendChild(chip);
     });
+
+    selectPhoneme(unit, unit.phonemes[0].ipa);
   }
 
   function renderPath() {
     const track = document.getElementById('pathTrack');
-    track.innerHTML = progression.map((unit, i) => {
+    track.innerHTML = '';
+    progression.forEach((unit, i) => {
       const colors = palette[unit.colorKey];
-      const dotStyle = unit.unlocked
-        ? `background:${colors.fill};color:${colors.dark}`
-        : `background:rgba(245,239,224,0.08);color:rgba(245,239,224,0.4)`;
-      const connector = i < progression.length - 1 ? '<span class="path-connector" aria-hidden="true"></span>' : '';
-      const lock = unit.unlocked ? '' : `<svg width="12" height="12" viewBox="0 0 12 12" style="position:absolute"><rect x="2.5" y="5" width="7" height="5.5" rx="1" fill="rgba(245,239,224,0.5)"/><path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="rgba(245,239,224,0.5)" stroke-width="1" fill="none"/></svg>`;
-      return `
-        <button class="path-node${unit.id === currentUnitId ? ' active' : ''}"
-                data-id="${unit.id}"
-                ${unit.unlocked ? '' : 'disabled aria-disabled="true"'}
-                aria-label="${unit.title}, grade ${unit.grade}${unit.unlocked ? '' : ', locked'}">
-          <span class="node-dot" style="${dotStyle};position:relative">${unit.unlocked ? unit.grade : ''}${lock}</span>
-          <span class="node-label">${unit.title}</span>
-        </button>
-        ${connector}`;
-    }).join('');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'path-node' + (unit.id === currentUnitId ? ' active' : '');
+      btn.dataset.id = unit.id;
+      btn.setAttribute('aria-label', unit.title + ', grade ' + unit.grade
+        + (unit.unlocked ? (isCompleted(unit.id) ? ', completed' : '') : ', locked'));
+      if (!unit.unlocked){
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+      }
 
-    track.querySelectorAll('.path-node:not([disabled])').forEach(btn => {
-      btn.addEventListener('click', () => selectUnit(btn.dataset.id));
+      const dot = document.createElement('span');
+      dot.className = 'node-dot';
+      dot.style.background = unit.unlocked ? colors.fill : 'rgba(245,239,224,0.10)';
+      dot.style.color = unit.unlocked ? colors.ink : 'var(--text-dim)';
+      dot.textContent = unit.unlocked ? unit.grade : '';
+      if (!unit.unlocked){
+        dot.insertAdjacentHTML('beforeend',
+          '<svg width="12" height="12" viewBox="0 0 12 12" style="position:absolute" aria-hidden="true">' +
+          '<rect x="2.5" y="5" width="7" height="5.5" rx="1" fill="rgba(245,239,224,0.6)"/>' +
+          '<path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="rgba(245,239,224,0.6)" stroke-width="1" fill="none"/></svg>');
+      } else if (isCompleted(unit.id)){
+        dot.insertAdjacentHTML('beforeend',
+          '<svg width="13" height="13" viewBox="0 0 13 13" style="position:absolute;top:-4px;right:-4px" aria-hidden="true">' +
+          '<circle cx="6.5" cy="6.5" r="6" fill="var(--amber)"/>' +
+          '<path d="M3.6 6.6l2 2 3.8-4" stroke="var(--on-amber)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'node-label';
+      label.textContent = unit.title;
+
+      btn.appendChild(dot);
+      btn.appendChild(label);
+      btn.addEventListener('click', () => selectUnit(unit.id));
+      track.appendChild(btn);
+
+      if (i < progression.length - 1){
+        const connector = document.createElement('span');
+        connector.className = 'path-connector';
+        connector.setAttribute('aria-hidden', 'true');
+        track.appendChild(connector);
+      }
     });
   }
 
   function selectUnit(id) {
-    const unit = progression.find(u => u.id === id);
+    const unit = getUnitById(id);
     if (!unit || !unit.unlocked) return;
     currentUnitId = id;
     renderHeroBubbles(unit);
     renderUnitCard(unit);
     renderPath();
+    refreshFullPathLink();
   }
+
+  /* ---------- mute ---------- */
+  const muteBtn = document.getElementById('muteBtn');
+  const muteIconWave = document.getElementById('muteIconWave');
+  const muteIconSlash = document.getElementById('muteIconSlash');
+  function syncMuteIcon(){
+    const muted = getMuted();
+    muteIconSlash.style.display = muted ? 'block' : 'none';
+    muteIconWave.style.display = muted ? 'none' : 'block';
+    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  }
+  muteBtn.addEventListener('click', () => { unlockAudio(); toggleMute(); syncMuteIcon(); });
+  syncMuteIcon();
 
   /* ---------- loading overlay + wiring ---------- */
   const overlay = document.getElementById('loadingOverlay');
-  const playBtn = document.getElementById('playBtn');
+  let navigating = false;
 
-  function showLoading(duration) {
+  function goTo(screen){
+    if (navigating) return;
+    navigating = true;
     overlay.classList.add('active');
-    window.setTimeout(() => overlay.classList.remove('active'), duration);
-  }
-
-  // demo hook: swap this timeout for your real "fetch next round" call,
-  // and unlock the next unit in `progression` once a round is completed.
-  function startRound(mode){
-    showLoading(1400);
     window.setTimeout(() => {
-      const screen = mode === 'say' ? 'echoorbit-sayit.html' : 'echoorbit-gameplay.html';
-      const dest = screen + '?unit=' + encodeURIComponent(currentUnitId)
+      window.location.href = screen + '?unit=' + encodeURIComponent(currentUnitId)
         + '&unlocked=' + encodeURIComponent(unlockedIdList());
-      window.location.href = dest;
-    }, 1400);
+    }, 900);
   }
-  playBtn.addEventListener('click', () => startRound('listen'));
+  document.getElementById('playBtn').addEventListener('click', () => { unlockAudio(); goTo('echoorbit-gameplay.html'); });
+  document.getElementById('sayBtn').addEventListener('click', () => { unlockAudio(); goTo('echoorbit-sayit.html'); });
   document.querySelectorAll('.mode-card').forEach(card => {
-    card.addEventListener('click', () => startRound(card.dataset.mode));
+    card.addEventListener('click', () => {
+      unlockAudio();
+      goTo(card.dataset.mode === 'say' ? 'echoorbit-sayit.html' : 'echoorbit-gameplay.html');
+    });
   });
 
-  document.getElementById('fullPathLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = 'echoorbit-path.html?unit=' + encodeURIComponent(currentUnitId)
+  // The link works without JavaScript; with it we append the current
+  // unit and progress so browsers with storage blocked still carry on.
+  const fullPathLink = document.getElementById('fullPathLink');
+  function refreshFullPathLink(){
+    fullPathLink.href = 'echoorbit-path.html?unit=' + encodeURIComponent(currentUnitId)
       + '&unlocked=' + encodeURIComponent(unlockedIdList());
-  });
+  }
 
   /* ---------- init ---------- */
+  installAudioUnlock();
   selectUnit(currentUnitId);
+  refreshFullPathLink();
 </script>
 
 </body>

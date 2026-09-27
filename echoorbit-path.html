@@ -4,47 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EchoOrbit — Your path</title>
+<meta name="description" content="See every sound unit in the EchoOrbit path and which ones you have unlocked.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
 <script src="progression.js"></script>
 <style>
-  :root{
-    --void:#171335;
-    --panel:#1F1B45;
-    --cream:#F5EFE0;
-    --teal:#5DCAA5;   --teal-dark:#0F6E56;   --teal-light:#9FE1CB;
-    --coral:#F0997B;  --coral-dark:#993C1D;  --coral-light:#FAECE7;
-    --amber:#EF9F27;  --amber-dark:#854F0B;  --amber-light:#FAC775;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    background:var(--void);
-    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
-    color:var(--cream);
-    -webkit-font-smoothing:antialiased;
-  }
-  h1, .heading{font-family:'Baloo 2', system-ui, sans-serif; font-weight:600}
-
   .topbar{
     position:sticky;
     top:0;
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:0.75rem;
     padding:0.9rem 1.25rem;
-    background:rgba(23,19,53,0.92);
+    background:rgba(23,19,53,0.94);
     backdrop-filter:blur(2px);
     z-index:5;
+    flex-wrap:wrap;
   }
   .back-btn{
-    background:none; border:none; color:var(--cream); opacity:0.75;
+    background:none; border:none; color:var(--text);
     font-size:0.9rem; font-family:inherit; cursor:pointer;
-    display:flex; align-items:center; gap:4px;
+    display:flex; align-items:center; gap:4px; padding:4px;
   }
-  .back-btn:hover{opacity:1}
-  .progress-note{font-size:0.8rem; opacity:0.6}
+  .back-btn:hover{color:var(--teal-light)}
+  .progress-note{font-size:0.82rem; color:var(--text-muted)}
+
+  .map-intro{
+    max-width:500px;
+    margin:0 auto;
+    padding:1rem 1.25rem 0;
+    font-size:0.88rem;
+    color:var(--text-muted);
+  }
 
   .map-wrap{
     position:relative;
@@ -74,7 +69,6 @@
     width:120px;
   }
   .node-btn[disabled]{cursor:not-allowed}
-  .node-btn:focus-visible .node-ring{outline:3px solid var(--teal-light); outline-offset:3px; border-radius:50%}
   .node-btn:not([disabled]):hover .node-ring{transform:scale(1.06)}
   .node-ring{
     width:64px; height:64px;
@@ -83,8 +77,7 @@
     transition:transform .15s ease;
     position:relative;
   }
-  .node-ring.locked{background:rgba(245,239,224,0.06); border:2px dashed rgba(245,239,224,0.2)}
-  .lock-icon{position:absolute}
+  .node-ring.locked{background:rgba(245,239,224,0.08); border:2px dashed rgba(245,239,224,0.3)}
   .node-grade{
     position:absolute;
     top:-6px; right:-6px;
@@ -95,46 +88,50 @@
     font-size:0.68rem;
     font-family:'Baloo 2', sans-serif;
     font-weight:600;
+    color:var(--text);
   }
-  .node-title{font-size:0.78rem; text-align:center; opacity:0.85; line-height:1.15}
-  .node-title.locked-text{opacity:0.4}
-  .node-current-badge{
+  .node-title{font-size:0.78rem; text-align:center; color:var(--text-muted); line-height:1.15}
+  .node-btn[disabled] .node-title{color:var(--text-dim)}
+  .node-badge{
     font-size:0.62rem;
-    background:var(--teal);
-    color:var(--teal-dark);
     border-radius:10px;
     padding:1px 8px;
     font-weight:700;
   }
-
-  @media (prefers-reduced-motion: reduce){
-    .star, .node-ring{animation:none !important; transition:none !important}
-  }
+  .node-badge.current{background:var(--teal); color:var(--on-teal)}
+  .node-badge.done{background:var(--amber); color:var(--on-amber)}
 </style>
 </head>
 <body>
 
+<a class="skip-link" href="#map">Skip to the path</a>
+
   <div class="topbar">
-    <button class="back-btn" onclick="goHome()">
+    <button class="back-btn" id="homeBtn" type="button">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Home
     </button>
     <span class="progress-note" id="progressNote"></span>
   </div>
 
-  <div class="map-wrap" id="mapWrap"></div>
+  <p class="map-intro">
+    Climb from the first sounds in kindergarten up to the full IPA lab in fifth grade.
+    Finishing a unit unlocks the next one.
+  </p>
+
+  <div class="map-wrap" id="map"></div>
+
+  <p class="sr-only" role="status" aria-live="polite" id="status"></p>
 
 <script>
-  // Restore progress passed from another screen.
+  // Restore saved progress, then merge anything passed in the URL so the
+  // page also works when storage is blocked.
+  restoreProgress();
   const params = new URLSearchParams(window.location.search);
   applyUnlockedParam(params.get('unlocked'));
 
-  function goHome(){
-    window.location.href = 'index.html?unlocked=' + encodeURIComponent(unlockedIdList());
-  }
-
-  function selectAndGoHome(id){
-    window.location.href = 'index.html?unit=' + encodeURIComponent(id)
+  function homeHref(unitId){
+    return 'index.html' + (unitId ? '?unit=' + encodeURIComponent(unitId) : '')
       + '&unlocked=' + encodeURIComponent(unlockedIdList());
   }
 
@@ -147,29 +144,27 @@
   const xSlots = [W*0.28, W*0.5, W*0.72];
   function nodePos(i){
     const rowFromBottom = N - 1 - i;
-    const y = H - 60 - rowFromBottom * ROW_H;
-    const x = xSlots[i % 3];
-    return {x, y};
+    return { x: xSlots[i % 3], y: H - 60 - rowFromBottom * ROW_H };
   }
 
-  function planetIcon(colorKey, grade, locked){
+  function planetIcon(colorKey, grade, locked, done){
     const colors = palette[colorKey];
     if (locked){
       return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(245,239,224,0.2)" stroke-width="2" stroke-dasharray="5 6"/>
-        <rect x="24" y="30" width="16" height="13" rx="2.5" fill="rgba(245,239,224,0.35)"/>
-        <path d="M27 30v-4a5 5 0 0 1 10 0v4" stroke="rgba(245,239,224,0.35)" stroke-width="2.2" fill="none"/>
+        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(245,239,224,0.28)" stroke-width="2" stroke-dasharray="5 6"/>
+        <rect x="24" y="30" width="16" height="13" rx="2.5" fill="rgba(245,239,224,0.45)"/>
+        <path d="M27 30v-4a5 5 0 0 1 10 0v4" stroke="rgba(245,239,224,0.45)" stroke-width="2.2" fill="none"/>
       </svg>`;
     }
     const uid = 'cp' + Math.random().toString(36).slice(2,8);
-    return `<svg width="64" height="64" viewBox="0 0 64 64">
+    return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
       <defs><clipPath id="${uid}"><circle cx="32" cy="32" r="24"/></clipPath></defs>
       <circle cx="32" cy="32" r="24" fill="${colors.fill}"/>
       <g clip-path="url(#${uid})">
         <circle cx="41" cy="41" r="24" fill="${colors.dark}"/>
         <circle cx="23" cy="21" r="10" fill="${colors.light}"/>
       </g>
-      <text x="32" y="37" fill="${colors.dark}" font-size="16" text-anchor="middle" font-weight="700" font-family="Baloo 2, sans-serif">${grade}</text>
+      <text x="32" y="37" fill="${colors.ink}" font-size="16" text-anchor="middle" font-weight="700" font-family="Baloo 2, sans-serif">${done ? '\u2713' : grade}</text>
     </svg>`;
   }
 
@@ -178,51 +173,67 @@
 
     // Starfield
     let stars = '';
-    for (let s=0; s<Math.round(H/22); s++){
+    for (let s = 0; s < Math.round(H/22); s++){
       stars += `<circle class="star" cx="${Math.random()*W}" cy="${Math.random()*H}" r="${(Math.random()*1.2+0.4).toFixed(2)}" style="animation-delay:${(Math.random()*3).toFixed(2)}s"/>`;
     }
 
     // Route line through all node positions, colored per-segment by
     // whether the traveler has actually reached that segment yet.
-    let path = `M ${positions[0].x} ${positions[0].y}`;
     let segments = '';
-    for (let i=0; i<positions.length-1; i++){
+    for (let i = 0; i < positions.length - 1; i++){
       const a = positions[i], b = positions[i+1];
       const midY = (a.y + b.y) / 2;
       const d = `M ${a.x} ${a.y} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y}`;
       const reached = progression[i+1].unlocked;
-      segments += `<path d="${d}" fill="none" stroke="${reached ? 'var(--teal)' : 'rgba(245,239,224,0.15)'}"
-        stroke-width="3" stroke-linecap="round" ${reached ? '' : 'stroke-dasharray="2 9"'} opacity="${reached ? 0.6 : 1}"/>`;
+      segments += `<path d="${d}" fill="none" stroke="${reached ? 'var(--teal)' : 'rgba(245,239,224,0.2)'}"
+        stroke-width="3" stroke-linecap="round" ${reached ? '' : 'stroke-dasharray="2 9"'} opacity="${reached ? 0.7 : 1}"/>`;
     }
 
-    const svg = `<svg class="route-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    const svg = `<svg class="route-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       ${stars}
       ${segments}
     </svg>`;
 
+    const currentId = params.get('unit');
     const nodesHtml = progression.map((u,i) => {
       const pos = positions[i];
-      const isCurrent = u.id === params.get('unit');
+      const done = isCompleted(u.id);
+      const badge = u.id === currentId
+        ? '<span class="node-badge current">Last played</span>'
+        : (done ? '<span class="node-badge done">Done</span>' : '');
       return `
-      <button class="node-btn" style="left:${(pos.x/W*100).toFixed(2)}%; top:${(pos.y/H*100).toFixed(3)}%"
+      <button class="node-btn" type="button" style="left:${(pos.x/W*100).toFixed(2)}%; top:${(pos.y/H*100).toFixed(3)}%"
         ${u.unlocked ? '' : 'disabled aria-disabled="true"'}
-        aria-label="${u.title}, grade ${u.grade}${u.unlocked ? '' : ', locked'}"
+        aria-label="${u.title}, grade ${u.grade}${done ? ', completed' : ''}${u.unlocked ? '' : ', locked'}"
         onclick="selectAndGoHome('${u.id}')">
         <div class="node-ring ${u.unlocked ? '' : 'locked'}">
-          ${planetIcon(u.colorKey, u.grade, !u.unlocked)}
+          ${planetIcon(u.colorKey, u.grade, !u.unlocked, done)}
         </div>
-        <span class="node-title ${u.unlocked ? '' : 'locked-text'}">${u.title}</span>
-        ${isCurrent ? '<span class="node-current-badge">Last played</span>' : ''}
+        <span class="node-title">${u.title}</span>
+        ${badge}
       </button>`;
     }).join('');
 
-    const wrap = document.getElementById('mapWrap');
+    const wrap = document.getElementById('map');
     wrap.innerHTML = svg + nodesHtml;
     wrap.style.aspectRatio = W + ' / ' + H;
+
     const unlockedCount = getUnlockedUnits().length;
-    document.getElementById('progressNote').textContent = unlockedCount + ' of ' + N + ' unlocked';
+    const doneCount = progression.filter(u => isCompleted(u.id)).length;
+    document.getElementById('progressNote').textContent =
+      unlockedCount + ' of ' + N + ' unlocked \u00b7 ' + doneCount + ' completed';
+    document.getElementById('status').textContent =
+      unlockedCount + ' of ' + N + ' units unlocked, ' + doneCount + ' completed.';
   }
 
+  function goHome(){
+    window.location.href = homeHref();
+  }
+  function selectAndGoHome(id){
+    window.location.href = homeHref(id);
+  }
+
+  document.getElementById('homeBtn').addEventListener('click', goHome);
   render();
 
   // Scroll to roughly where the traveler currently is (near the
@@ -230,7 +241,7 @@
   window.addEventListener('load', () => {
     const idx = progression.reduce((acc, u, i) => u.unlocked ? i : acc, 0);
     const pos = nodePos(idx);
-    const wrap = document.getElementById('mapWrap');
+    const wrap = document.getElementById('map');
     const scale = wrap.clientWidth / W;
     window.scrollTo({ top: Math.max(0, pos.y * scale - window.innerHeight * 0.6), behavior: 'instant' });
   });
