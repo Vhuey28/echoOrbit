@@ -3,13 +3,18 @@
      recorded audio files are needed for this prototype.
    - Feedback sounds (correct/wrong/complete) are synthesized tones via
      the Web Audio API, same reason.
-   - Browsers block audio before a user gesture happens on the page, so
-     nothing here plays automatically until unlockAudio() has run once,
-     which the calling screens trigger on the player's first tap/click. */
+   - Browsers block audio before a user gesture happens on the page.
+     installAudioUnlock() listens once for that gesture; anything queued
+     with speak() before it lands plays as soon as it does, so a kid who
+     arrives straight on a gameplay screen is never left in silence. */
 
 let audioUnlocked = false;
 let isMuted = false;
 let audioCtx = null;
+let cachedVoices = [];
+let pendingSpeak = null;   // only the most recent request is remembered
+
+const MUTE_KEY = 'echoorbit.muted';
 
 function unlockAudio(){
   if (audioUnlocked) return;
@@ -23,36 +28,100 @@ function unlockAudio(){
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume().catch(() => {});
   }
+  loadMutePreference();
+  const queued = pendingSpeak;
+  pendingSpeak = null;
+  if (queued && !isMuted) queued();
+}
+
+/* Wire a one-shot gesture listener so any first tap/click/keypress on
+   the page unlocks audio. Safe to call more than once. */
+function installAudioUnlock(){
+  if (audioUnlocked) return;
+  const events = ['pointerdown', 'keydown', 'touchstart'];
+  const handler = () => {
+    unlockAudio();
+    events.forEach(ev => document.removeEventListener(ev, handler, true));
+  };
+  events.forEach(ev => document.addEventListener(ev, handler, true));
+}
+
+function loadMutePreference(){
+  try {
+    isMuted = window.localStorage.getItem(MUTE_KEY) === '1';
+  } catch (e) { /* storage blocked -- start unmuted */ }
+}
+
+function persistMutePreference(){
+  try { window.localStorage.setItem(MUTE_KEY, isMuted ? '1' : '0'); } catch (e) {}
 }
 
 function toggleMute(){
   isMuted = !isMuted;
   if (isMuted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  persistMutePreference();
   return isMuted;
 }
 
-// Best-effort only -- exact voice availability varies by device and OS,
-// so this can't guarantee a "kid-friendly" voice, just a reasonable one.
-function pickVoice(){
-  if (!('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
-  return voices.find(v => v.lang === 'en-US') || voices[0] || null;
+function getMuted(){
+  return isMuted;
 }
 
-function speak(text, onEnd){
-  if (isMuted || !audioUnlocked || !('speechSynthesis' in window)) {
-    if (onEnd) onEnd();
+// Apply the saved preference as soon as the module loads, so the mute
+// button renders in the right state before any gesture happens.
+loadMutePreference();
+
+/* Chrome populates the voice list asynchronously, so the first
+   getVoices() call often returns []. Cache what we see and refresh on
+   the voiceschanged event; exact availability still varies by device. */
+function refreshVoices(){
+  if (!('speechSynthesis' in window)) return;
+  const v = window.speechSynthesis.getVoices();
+  if (v && v.length) cachedVoices = v;
+}
+function pickVoice(){
+  if (!('speechSynthesis' in window)) return null;
+  if (!cachedVoices.length) refreshVoices();
+  return cachedVoices.find(v => /^en[-_]US/i.test(v.lang))
+      || cachedVoices.find(v => /^en/i.test(v.lang))
+      || cachedVoices[0] || null;
+}
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  refreshVoices();
+  window.speechSynthesis.addEventListener
+    && window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+}
+
+/* opts: { rate, pitch, onEnd }
+   Slower than natural speech throughout -- early readers track it
+   better, and it is easier to copy a sound you can actually hear. */
+function speak(text, opts){
+  const o = opts || {};
+  if (!audioUnlocked) {
+    // Remember the latest request only; a backlog of queued words would
+    // blurt out all at once when audio finally unlocks.
+    pendingSpeak = () => speak(text, o);
+    if (o.onEnd) o.onEnd();
+    return;
+  }
+  if (isMuted || !('speechSynthesis' in window)) {
+    if (o.onEnd) o.onEnd();
     return;
   }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 0.85;   // slightly slower, easier for early readers to track
-  utter.pitch = 1.08;
+  utter.rate = o.rate || 0.85;
+  utter.pitch = o.pitch || 1.08;
   utter.lang = 'en-US';
   const voice = pickVoice();
   if (voice) utter.voice = voice;
-  if (onEnd) utter.onend = onEnd;
+  if (o.onEnd) utter.onend = o.onEnd;
   window.speechSynthesis.speak(utter);
+}
+
+/* Half-speed replay, for the "listen closely" button. */
+function speakSlow(text, onEnd){
+  speak(text, { rate: 0.5, pitch: 1.0, onEnd: onEnd });
 }
 
 function tone(freq, duration, delay, type){

@@ -1,0 +1,113 @@
+/* EchoOrbit shared theme.
+   One place for the palette, typography and the accessibility baseline
+   (contrast, focus rings, screen-reader-only helper, reduced motion) so
+   the four screens can't drift apart.
+
+   Contrast notes -- every text token below was measured against the
+   surfaces it is used on (see `npm test`):
+     --text        #F5EFE0  15.5:1 on void, 14.1:1 on panel
+     --text-muted  #C6BFD2   9.9:1 on void,  9.0:1 on panel
+     --text-dim    #AEA7BF   7.6:1 on void,  6.9:1 on panel
+     --on-teal     #073026   7.1:1 on teal  (button + bubble label ink)
+     --on-coral    #4A1C0C   6.5:1 on coral
+     --on-amber    #4A2B04   8.2:1 on amber-light
+   The old screens reached for `opacity: .4` - `.65` on cream text, which
+   lands between 3.1:1 and 5.6:1 and fails WCAG AA on the panel surface. */
+
+:root{
+  --void:#171335;
+  --void-deep:#12102B;
+  --panel:#1F1B45;
+  --panel-raise:rgba(245,239,224,0.07);
+  --cream:#F5EFE0;
+
+  /* text on dark surfaces -- AA compliant, no opacity tricks */
+  --text:#F5EFE0;
+  --text-muted:#C6BFD2;
+  --text-dim:#AEA7BF;
+
+  /* accent families. `ink` is the readable foreground for text drawn
+     ON the light accent colour (buttons, bubble labels, badges). */
+  --teal:#5DCAA5;        --teal-dark:#0F6E56;  --teal-light:#9FE1CB;  --on-teal:#073026;
+  --coral:#F0997B;       --coral-dark:#993C1D; --coral-light:#FAECE7; --on-coral:#4A1C0C;
+  --amber:#EF9F27;       --amber-dark:#854F0B; --amber-light:#FAC775; --on-amber:#4A2B04;
+  --purple:#AFA9EC;      --purple-dark:#26215C;--purple-deep:#7F77DD;
+
+  --focus-ring:#9FE1CB;
+  --radius:16px;
+}
+
+*{box-sizing:border-box}
+
+html{
+  /* Respect the OS text-size setting instead of pinning px everywhere. */
+  -webkit-text-size-adjust:100%;
+}
+
+body{
+  margin:0;
+  background:var(--void);
+  font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
+  font-size:1rem;
+  line-height:1.45;
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+
+h1, h2, h3, .heading{
+  font-family:'Baloo 2', system-ui, sans-serif;
+  font-weight:600;
+  line-height:1.2;
+}
+
+a{color:inherit}
+
+button{font:inherit}
+
+/* A single, obvious focus ring everywhere. `:focus-visible` keeps it off
+   for mouse users while guaranteeing it for keyboard users. Note the
+   deliberate absence of `border-radius` here: setting it on focus would
+   visibly reshape rounded cards and pills. */
+:focus-visible{
+  outline:3px solid var(--focus-ring);
+  outline-offset:3px;
+}
+
+/* Skip link: hidden until it receives keyboard focus. */
+.skip-link{
+  position:absolute;
+  left:-9999px;
+  top:0;
+  z-index:100;
+  background:var(--teal);
+  color:var(--on-teal);
+  font-weight:700;
+  padding:0.6rem 1rem;
+  border-radius:0 0 12px 0;
+  text-decoration:none;
+}
+.skip-link:focus{left:0}
+
+/* Visually hidden but still exposed to assistive tech. Used for the
+   live region that narrates the game, which has no visual equivalent. */
+.sr-only{
+  position:absolute !important;
+  width:1px; height:1px;
+  padding:0; margin:-1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+  border:0;
+}
+
+/* Every decorative animation in the app is switched off for people who
+   ask their OS to reduce motion. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}

@@ -1,0 +1,391 @@
+/* EchoOrbit shared gameplay styles, used by both the "Listen and match"
+   and "Say it" screens. Depends on theme.css for the palette. */
+
+.screen{
+  max-width:720px;
+  margin:0 auto;
+  padding:1rem 1rem 3rem;
+}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:0.75rem;
+  padding:0.5rem 0.25rem 1rem;
+  flex-wrap:wrap;
+}
+.back-btn{
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:0.9rem;
+  font-family:inherit;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:4px;
+}
+.back-btn:hover{color:var(--teal-light)}
+
+.hud{
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+}
+.icon-btn{
+  background:var(--panel);
+  border:1px solid rgba(245,239,224,0.18);
+  color:var(--text);
+  border-radius:18px;
+  padding:0.32rem 0.7rem;
+  font-size:0.78rem;
+  font-family:inherit;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.icon-btn:hover{border-color:var(--teal)}
+.icon-btn[aria-pressed="true"]{
+  background:rgba(93,202,165,0.18);
+  border-color:var(--teal);
+  color:var(--teal-light);
+}
+.mute-btn{padding:0.35rem 0.5rem}
+.hud-stat{text-align:right; min-width:2.6rem}
+.hud-stat .num{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:600;
+  font-size:1.1rem;
+  display:block;
+  color:var(--text);
+}
+.hud-stat .lbl{font-size:0.72rem; color:var(--text-dim)}
+
+/* ---------- target badge ---------- */
+.target-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.6rem;
+  margin-bottom:0.75rem;
+  flex-wrap:wrap;
+}
+.target-label{font-size:0.85rem; color:var(--text-muted)}
+.target-badge{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--panel);
+  border:1px solid rgba(93,202,165,0.35);
+  border-radius:24px;
+  padding:0.5rem 1.1rem 0.5rem 0.6rem;
+  cursor:pointer;
+  color:inherit;
+  font-family:inherit;
+  transition:transform .15s ease;
+}
+.target-badge:hover{transform:translateY(-1px)}
+.target-badge .ipa-big{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size:1.3rem;
+  color:var(--teal);
+}
+.target-badge .speaker{
+  width:26px; height:26px;
+  border-radius:50%;
+  background:rgba(93,202,165,0.22);
+  display:flex; align-items:center; justify-content:center;
+}
+.target-badge .say-word{font-size:0.85rem; color:var(--text-muted)}
+
+/* ---------- articulation cue panel ---------- */
+.cue-panel{
+  background:var(--panel);
+  border-radius:var(--radius);
+  padding:0.9rem 1rem;
+  margin:0 0 0.9rem;
+  display:flex;
+  gap:1rem;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.cue-panel[hidden]{display:none}
+.cue-text{flex:1 1 15rem; min-width:0}
+.cue-tip{
+  margin:0 0 0.5rem;
+  font-size:0.92rem;
+  color:var(--text);
+}
+.cue-caption{
+  margin:0 0 0.55rem;
+  font-size:0.8rem;
+  color:var(--text-muted);
+}
+.cue-words{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.4rem;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.cue-word{
+  background:var(--panel-raise);
+  border:1px solid rgba(245,239,224,0.16);
+  color:var(--text);
+  border-radius:16px;
+  padding:0.25rem 0.7rem;
+  font-size:0.85rem;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cue-word:hover{border-color:var(--teal); background:rgba(93,202,165,0.14)}
+
+/* ---------- mic control (say-it mode) ---------- */
+.mic-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.6rem;
+  margin-bottom:0.9rem;
+  flex-wrap:wrap;
+}
+.mic-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--panel);
+  border:1.5px solid rgba(240,153,123,0.55);
+  color:var(--text);
+  border-radius:22px;
+  padding:0.5rem 1.1rem;
+  font-family:inherit;
+  font-size:0.85rem;
+  cursor:pointer;
+}
+.mic-btn.listening{
+  border-color:var(--coral);
+  background:rgba(240,153,123,0.16);
+}
+.mic-btn.listening .mic-dot{animation:micpulse 1.1s ease-in-out infinite}
+.mic-btn[disabled]{opacity:0.55; cursor:not-allowed}
+.mic-dot{width:9px; height:9px; border-radius:50%; background:var(--coral)}
+@keyframes micpulse{
+  0%,100%{transform:scale(1); opacity:0.65}
+  50%{transform:scale(1.4); opacity:1}
+}
+.mic-heard{
+  margin:0;
+  font-size:0.8rem;
+  color:var(--text-muted);
+}
+.mic-unsupported{
+  text-align:center;
+  font-size:0.82rem;
+  color:var(--text-muted);
+  margin:0 0 0.5rem;
+}
+
+/* ---------- play field ---------- */
+.field-wrap{
+  position:relative;
+  border-radius:20px;
+  overflow:hidden;
+  background:var(--void-deep);
+  touch-action:none;
+}
+#field{
+  display:block;
+  width:100%;
+  height:auto;
+  cursor:crosshair;
+}
+#field:focus-visible{outline:3px solid var(--focus-ring); outline-offset:-3px}
+
+.start-hint{
+  position:absolute;
+  inset:auto 0 12px;
+  text-align:center;
+  font-size:0.9rem;
+  font-weight:700;
+  font-family:'Baloo 2', sans-serif;
+  color:var(--on-teal);
+  pointer-events:none;
+}
+.start-hint span{
+  background:var(--teal);
+  border-radius:14px;
+  padding:0.3rem 0.85rem;
+  display:inline-block;
+}
+.start-hint[hidden]{display:none}
+
+.feedback-toast{
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:0.4rem 0.9rem;
+  border-radius:16px;
+  font-size:0.85rem;
+  font-weight:700;
+  font-family:'Baloo 2', sans-serif;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s ease, transform .15s ease;
+}
+.feedback-toast.show{opacity:1; transform:translateX(-50%) translateY(4px)}
+.feedback-toast.correct{background:var(--teal); color:var(--on-teal)}
+.feedback-toast.voice{background:var(--coral); color:var(--on-coral)}
+.feedback-toast.wrong{background:#3A3363; color:var(--text)}
+
+.instructions{
+  text-align:center;
+  font-size:0.85rem;
+  color:var(--text-muted);
+  margin-top:0.9rem;
+}
+
+/* ---------- easy tap: a no-aim way to play ----------
+   Gives kindergarten players and keyboard / screen-reader users the
+   same round the cannon does, without needing to aim. */
+.easy-tap{
+  margin-top:0.9rem;
+  background:var(--panel);
+  border-radius:var(--radius);
+  padding:0.8rem 0.9rem;
+}
+.easy-tap[hidden]{display:none}
+.easy-tap-label{
+  margin:0 0 0.55rem;
+  font-size:0.8rem;
+  color:var(--text-muted);
+}
+.easy-tap-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.5rem;
+}
+.bubble-pick{
+  display:flex;
+  align-items:center;
+  gap:0.45rem;
+  background:var(--panel-raise);
+  border:1px solid rgba(245,239,224,0.18);
+  color:var(--text);
+  border-radius:22px;
+  padding:0.35rem 0.85rem 0.35rem 0.4rem;
+  font-family:inherit;
+  cursor:pointer;
+}
+.bubble-pick:hover{border-color:var(--teal); transform:translateY(-1px)}
+.bubble-pick .key{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size:0.72rem;
+  background:rgba(245,239,224,0.12);
+  border-radius:6px;
+  padding:0.05rem 0.35rem;
+  color:var(--text-muted);
+}
+.bubble-pick .ipa{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size:1rem;
+}
+
+/* ---------- round complete overlay ---------- */
+.complete-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(10,8,28,0.94);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  padding:1.5rem;
+  z-index:50;
+}
+.complete-overlay.active{display:flex}
+.confetti-piece{
+  position:absolute;
+  top:-16px;
+  width:7px;
+  height:11px;
+  border-radius:1px;
+  animation:confettiFall linear forwards;
+  pointer-events:none;
+}
+@keyframes confettiFall{
+  to{ transform:translateY(320px) rotate(360deg); opacity:0; }
+}
+.complete-badge{
+  width:64px; height:64px;
+  border-radius:50%;
+  background:var(--teal);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:1rem;
+}
+.complete-overlay h2{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:600;
+  font-size:1.4rem;
+  margin:0 0 0.5rem;
+}
+.complete-stats{
+  display:flex;
+  gap:1.5rem;
+  margin:0.75rem 0 0.5rem;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.complete-stats div{text-align:center}
+.complete-stats .num{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:600;
+  font-size:1.3rem;
+  display:block;
+}
+.complete-stats .lbl{font-size:0.72rem; color:var(--text-dim)}
+.unlock-line{
+  font-size:0.9rem;
+  color:var(--teal);
+  margin:0.5rem 0 1.25rem;
+}
+.continue-btn{
+  background:var(--teal);
+  color:var(--on-teal);
+  border:none;
+  border-radius:22px;
+  padding:0.75rem 1.75rem;
+  font-size:0.95rem;
+  font-weight:700;
+  font-family:'Atkinson Hyperlegible', sans-serif;
+  cursor:pointer;
+}
+.continue-btn:hover{transform:translateY(-1px)}
+.ghost-btn{
+  background:none;
+  border:1px solid rgba(245,239,224,0.3);
+  color:var(--text);
+  border-radius:22px;
+  padding:0.65rem 1.4rem;
+  font-size:0.9rem;
+  font-family:inherit;
+  cursor:pointer;
+  margin-left:0.6rem;
+}
+.ghost-btn:hover{border-color:var(--teal)}
+
+@media (prefers-reduced-motion: reduce){
+  .confetti-piece{display:none}
+  .feedback-toast, .target-badge, .continue-btn, .bubble-pick{transition:none}
+  .target-badge:hover, .bubble-pick:hover, .continue-btn:hover{transform:none}
+}
